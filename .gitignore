@@ -1,4 +1,6 @@
-.gradle/
-.idea/
+/.gradle/
+/.idea/
+/gradle/
+/gradlew*
 *.iml
 

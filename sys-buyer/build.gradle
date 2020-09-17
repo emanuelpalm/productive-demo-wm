@@ -1,0 +1,15 @@
+plugins {
+    id 'application'
+}
+
+mainClassName = "${project.group}.buyer.Main"
+
+ext {
+    versionArkalix = '0.4.4'
+}
+
+dependencies {
+    implementation "se.arkalix:kalix-base:$versionArkalix"
+    implementation "se.arkalix:kalix-core-plugins:$versionArkalix"
+    annotationProcessor "se.arkalix:kalix-processors:$versionArkalix"
+}
