@@ -5,11 +5,13 @@ plugins {
 mainClassName = "${project.group}.buyer.Main"
 
 ext {
-    versionArkalix = '0.4.4'
+    versionArkalix = '0.4.5-SNAPSHOT'
+    versionSlf4j = '1.7.30'
 }
 
 dependencies {
     implementation "se.arkalix:kalix-base:$versionArkalix"
     implementation "se.arkalix:kalix-core-plugins:$versionArkalix"
     annotationProcessor "se.arkalix:kalix-processors:$versionArkalix"
+    implementation "org.slf4j:slf4j-jdk14:$versionSlf4j"
 }

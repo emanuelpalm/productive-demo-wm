@@ -103,6 +103,32 @@
             padding: 1rem;
             width: 20rem;
         }
+
+        #orders.error {
+            color: #96232D;
+        }
+
+        #orders:not(.error) {
+            column-gap: 0.25rem;
+            display: grid;
+            grid-template-columns: 12rem auto;
+            row-gap: 0.25rem;
+        }
+
+        #orders > div {
+            border-bottom: 0.1rem solid #ddd;
+            font-family: sans-serif;
+            padding: 0.25rem;
+        }
+
+        #orders > div.header {
+            border-bottom: 0.15rem solid #ccc;
+            font-family: inherit;
+        }
+
+        #orders > div.number {
+            text-align: right;
+        }
     </style>
     <script>
         window.onload = function() {
@@ -123,6 +149,51 @@
                         setOfferFormDisabled(false);
                     });
             });
+
+            let orderPoller;
+            let $orders = document.getElementById("orders");
+            const pollForOrders = function() {
+                orderPoller = window.setInterval(function() {
+                     getJson("/orders")
+                        .then(function(orders) {
+                            $orders.classList.remove("error");
+                            $orders.innerText = "";
+
+                            const $h1 = document.createElement("div");
+                            $h1.className = "header";
+                            $h1.innerText = "Article ID";
+                            $orders.appendChild($h1);
+
+                            const $h2 = document.createElement("div");
+                            $h2.className = "header";
+                            $h2.innerText = "Quantity";
+                            $orders.appendChild($h2);
+
+                            (orders || [])
+                                .sort(function(a, b) {
+                                    return a.articleId.localeCompare(b.articleId);
+                                })
+                                .forEach(function(order) {
+                                    const $articleId = document.createElement("div");
+                                    $articleId.innerText = order.articleId;
+                                    $orders.appendChild($articleId);
+
+                                    const $quantity = document.createElement("div");
+                                    $quantity.classList.add("number");
+                                    $quantity.innerText = order.quantity;
+                                    $orders.appendChild($quantity);
+                                });
+                        })
+                        .catch(function(error) {
+                            console.log(error);
+                            $orders.classList.add("error");
+                            $orders.innerText = "Failed to retrieve pending manufacturing orders. Trying again in 10 seconds ...";
+                            window.clearInterval(orderPoller);
+                            window.setTimeout(pollForOrders, 10000);
+                        });
+                }, 500);
+            };
+            pollForOrders();
         };
 
         function statusOk(message) { status("ok", message); }
@@ -195,15 +266,15 @@
             }
             return request(method, url, headers, payload)
                 .then(function (xhr) {
-                    if (xhr.responseType !== "json") {
+                    const contentType = (xhr.getResponseHeader("content-type") || "").trim().toLowerCase();
+                    if (!contentType.startsWith("application/json")) {
                         throw {
                             "name": "badResponseType",
-                            "message": "Expected JSON-formatted response from server; received `" +
-                                xhr.getResponseHeader("content-type") + "`.",
+                            "message": "Expected JSON-formatted response from server; received `" + contentType + "`.",
                             "data": xhr
                         };
                     }
-                    return xhr.response;
+                    return JSON.parse(xhr.responseText);
                 });
         }
 
@@ -266,7 +337,8 @@
             <input type="text" name="unit_price" min="0.00" pattern="[0-9]+(\.[0-9]{2})?" value="420.00" style="text-align: right;" class="number" />
             <input id="offer-form-submit" type="submit" value="Send">
         </form>
-        <div id="status" class="info">Click "Send" to submit a new production order offer to the manufacturer. Accepted and pending orders will be listed to the right.</div>
+        <div id="status" class="info">Click "Send" to submit a new production order offer to the manufacturer. Accepted
+            and pending orders are listed to the right.</div>
     </section>
     <section class="orders">
         <h1>In-Progress Orders</h1>
