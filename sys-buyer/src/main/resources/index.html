@@ -18,10 +18,13 @@
             padding: 0;
         }
 
-        body > .offer {
+        body > section:not(:last-child) {
+            margin-right: 1rem;
+        }
+
+        body > section.offer {
             display: flex;
             flex-direction: column;
-            margin-right: 1rem;
         }
 
         h1 {
@@ -92,7 +95,7 @@
             display: block;
         }
 
-        .orders {
+        .offers, .orders {
             background-color: #fff;
             border-radius: 0.5rem;
             box-shadow: 0 0.2rem 0.1rem #00000020;
@@ -104,28 +107,42 @@
             width: 20rem;
         }
 
+        #offers.error,
         #orders.error {
             color: #96232D;
+            font-family: sans-serif;
+            font-size: 0.8rem;
         }
 
+        #offers:not(.error),
         #orders:not(.error) {
             column-gap: 0.25rem;
             display: grid;
-            grid-template-columns: 12rem auto;
             row-gap: 0.25rem;
         }
 
+        #offers:not(.error) {
+            grid-template-columns: 3rem 2rem 2rem 2rem 3rem auto;
+        }
+
+        #orders:not(.error) {
+            grid-template-columns: 12rem auto;
+        }
+
+        #offers > div,
         #orders > div {
             border-bottom: 0.1rem solid #ddd;
             font-family: sans-serif;
             padding: 0.25rem;
         }
 
+        #offers > div.header,
         #orders > div.header {
             border-bottom: 0.15rem solid #ccc;
             font-family: inherit;
         }
 
+        #offers > div.number,
         #orders > div.number {
             text-align: right;
         }
@@ -135,25 +152,122 @@
             const $offerForm = document.getElementById("offer-form");
             $offerForm.addEventListener("submit", function(event) {
                 event.preventDefault();
+                document.activeElement.blur();
                 setOfferFormDisabled(true);
                 statusInfo("Sending offer ...");
                 postJson("/offers", getOfferFormData())
                     .then(function(response) {
-                        statusInfo(JSON.stringify(response));
+                        statusInfo("Offer submitted.");
                     })
                     .catch(function(error) {
                         console.log(error);
                         statusError(error.message);
                     })
                     .finally(function() {
-                        setOfferFormDisabled(false);
+                        setTimeout(function() {
+                            setOfferFormDisabled(false);
+                        }, 3000);
                     });
             });
 
+            let offerPoller;
+            const $offers = document.getElementById("offers");
+            const pollForOffers = function() {
+                const poll = function() {
+                    getJson("/offers")
+                        .then(function(offers) {
+                            $offers.classList.remove("error");
+                            $offers.innerText = "";
+
+                            const $h1 = document.createElement("div");
+                            $h1.className = "header";
+                            $h1.innerText = "ID";
+                            $offers.appendChild($h1);
+
+                            const $h2 = document.createElement("div");
+                            $h2.className = "header";
+                            $h2.innerText = "D?";
+                            $offers.appendChild($h2);
+
+                            const $h3 = document.createElement("div");
+                            $h3.className = "header";
+                            $h3.innerText = "M?";
+                            $offers.appendChild($h3);
+
+                            const $h4 = document.createElement("div");
+                            $h4.className = "header";
+                            $h4.innerText = "Q";
+                            $offers.appendChild($h4);
+
+                            const $h5 = document.createElement("div");
+                            $h5.className = "header";
+                            $h5.innerText = "UP";
+                            $offers.appendChild($h5);
+
+                            const $h6 = document.createElement("div");
+                            $h6.className = "header";
+                            $h6.innerText = "Status";
+                            $offers.appendChild($h6);
+
+                            (offers || []).forEach(function(offer) {
+                                const $id = document.createElement("div");
+                                $id.classList.add("number");
+                                $id.classList.add(offer.status);
+                                $id.innerText = offer.id;
+                                $offers.appendChild($id);
+
+                                const $drilled = document.createElement("div");
+                                $drilled.innerText = offer.drilled;
+                                $drilled.classList.add(offer.status);
+                                $offers.appendChild($drilled);
+
+                                const $milled = document.createElement("div");
+                                $milled.innerText = offer.milled;
+                                $milled.classList.add(offer.status);
+                                $offers.appendChild($milled);
+
+                                const $quantity = document.createElement("div");
+                                $quantity.classList.add("number");
+                                $quantity.classList.add(offer.status);
+                                $quantity.innerText = offer.quantity;
+                                $offers.appendChild($quantity);
+
+                                const $pricePerUnit = document.createElement("div");
+                                $pricePerUnit.innerText = offer.pricePerUnit;
+                                $pricePerUnit.classList.add("number");
+                                $pricePerUnit.classList.add(offer.status);
+                                $offers.appendChild($pricePerUnit);
+
+                                const $status = document.createElement("div");
+                                $status.innerText = offer.status;
+                                $status.classList.add("status");
+                                $status.classList.add(offer.status);
+                                if (offer.status.toUpperCase() === "COUNTERED") {
+                                    $status.addEventListener("click", function(event) {
+                                        event.preventDefault();
+                                        setOfferFormData(offer.counterOffer);
+                                    });
+                                }
+                                $offers.appendChild($status);
+                            });
+                        })
+                        .catch(function(error) {
+                            console.log(error);
+                            $offers.classList.add("error");
+                            $offers.innerText = "Failed to retrieve pending offers. Trying again in 10 seconds ...";
+                            window.clearInterval(offerPoller);
+                            window.setTimeout(pollForOffers, 10000);
+                        });
+                };
+                poll();
+                offerPoller = window.setInterval(poll, 2000);
+            };
+            pollForOffers();
+
             let orderPoller;
-            let $orders = document.getElementById("orders");
+            const $orders = document.getElementById("orders");
             const pollForOrders = function() {
-                orderPoller = window.setInterval(function() {
+                const poll = function() {
                      getJson("/orders")
                         .then(function(orders) {
                             $orders.classList.remove("error");
@@ -191,15 +305,12 @@
                             window.clearInterval(orderPoller);
                             window.setTimeout(pollForOrders, 10000);
                         });
-                }, 500);
+                };
+                poll();
+                orderPoller = window.setInterval(poll, 2000);
             };
             pollForOrders();
         };
-
-        function statusOk(message) { status("ok", message); }
-        function statusWarning(message) { status("warning", message); }
-        function statusError(message) { status("error", message); }
-        function statusInfo(message) { status("info", message); }
 
         function getOfferFormData() {
             const data = {};
@@ -230,16 +341,43 @@
             return data;
         }
 
+        function setOfferFormData(data) {
+            document.querySelectorAll("#offer-form > select, #offer-form > input").forEach(function($element) {
+                const value = data[$element.name];
+                if (typeof value !== "undefined" && ($element.classList.contains("boolean") ||
+                    $element.classList.contains("number") ||
+                    $element.classList.contains("text")))
+                {
+                    $element.value = value;
+                }
+            });
+        }
+
         function setOfferFormDisabled(isDisabled) {
             document.querySelectorAll("#offer-form > select, #offer-form > input").forEach(function($element) {
                 $element.disabled = isDisabled;
             });
         }
 
+        function statusOk(message) { status("ok", message); }
+        function statusWarning(message) { status("warning", message); }
+        function statusError(message) { status("error", message); }
+        function statusInfo(message) { status("info", message); }
+
+        let statusTimeout;
         function status(type, message) {
+            console.log(type + ": " + message);
             const $status = document.getElementById("status");
             $status.className = type;
             $status.innerText = message;
+            if (statusTimeout) {
+                clearTimeout(statusTimeout);
+            }
+            statusTimeout = setTimeout(function() {
+                $status.className = "";
+                $status.innerText = "";
+                statusTimeout = undefined;
+            }, 3000 + message.length * 60);
         }
 
         function getJson(url, headers) {
@@ -264,8 +402,14 @@
             if (payload && typeof payload === "object") {
                 payload = JSON.stringify(payload);
             }
+            if (payload) {
+                headers["content-type"] = "application/json";
+            }
             return request(method, url, headers, payload)
                 .then(function (xhr) {
+                    if (typeof xhr.responseText === "undefined" || xhr.responseText.length === 0) {
+                        return null;
+                    }
                     const contentType = (xhr.getResponseHeader("content-type") || "").trim().toLowerCase();
                     if (!contentType.startsWith("application/json")) {
                         throw {
@@ -320,7 +464,7 @@
 <body>
     <section class="offer">
         <form id="offer-form">
-            <h1>Buyer Offer</h1>
+            <h1>New Offer</h1>
             <label>Drilled?</label>
             <select name="drilled" class="boolean">
                 <option value="true">Yes</option>
@@ -334,11 +478,16 @@
             <label>Quantity</label>
             <input type="number" name="quantity" min="1" step="1" value="1" class="number" />
             <label>Unit Price, Euro</label>
-            <input type="text" name="unit_price" min="0.00" pattern="[0-9]+(\.[0-9]{2})?" value="420.00" style="text-align: right;" class="number" />
+            <input type="text" name="pricePerUnit" min="0.00" pattern="[0-9]+(\.[0-9]{2})?" value="420.00" style="text-align: right;" class="number" />
             <input id="offer-form-submit" type="submit" value="Send">
         </form>
-        <div id="status" class="info">Click "Send" to submit a new production order offer to the manufacturer. Accepted
-            and pending orders are listed to the right.</div>
+        <div id="status" class="info">Click "Send" to offer a new production order. Pending <i>offers</i> are listed
+            under <i>Sent Offers</i>, while accepted and pending <i>orders</i> are listed under <i>In-Progress
+            Orders</i>.</div>
+    </section>
+    <section class="offers">
+        <h1>Sent Offers</h1>
+        <div id="offers"></div>
     </section>
     <section class="orders">
         <h1>In-Progress Orders</h1>

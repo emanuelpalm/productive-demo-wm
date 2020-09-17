@@ -35,7 +35,7 @@ public class Front {
 
     private final ArSystem system;
 
-    public Front(ArSystem system) {
+    private Front(final ArSystem system) {
         this.system = system;
     }
 
@@ -71,11 +71,17 @@ public class Front {
                         return done();
                     })
 
-                    .post("/offers", (request, response) -> {
+                    .get("/offers", (request, response) -> {
                         response
-                            .status(OK);
+                            .status(OK)
+                            .body(handler.onGetOffers());
                         return done();
-                    }))
+                    })
+
+                    .post("/offers", (request, response) -> request
+                        .bodyAs(DataOfferUserDto.class)
+                        .flatMap(handler::onOffer)
+                        .ifSuccess(ignored -> response.status(OK))))
 
                     .ifSuccess(handle -> logger.info("Front-end service is now being served"))
                     .ifFailure(Throwable.class, throwable -> logger.error("Failed to serve front-end service", throwable))
@@ -89,8 +95,10 @@ public class Front {
     }
 
     public interface RequestHandler {
-        OrderDto[] onGetOrders();
+        DataOrderDto[] onGetOrders();
 
-        void onOffer(OfferDto offer);
+        DataOfferBackDto[] onGetOffers();
+
+        Future<?> onOffer(final DataOfferUserDto offer);
     }
 }

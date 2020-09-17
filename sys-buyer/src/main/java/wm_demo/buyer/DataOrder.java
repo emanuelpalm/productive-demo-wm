@@ -5,7 +5,7 @@ import se.arkalix.dto.DtoWritableAs;
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 @DtoWritableAs(JSON)
-public interface Order {
+public interface DataOrder {
     int quantity();
     String articleId();
 }

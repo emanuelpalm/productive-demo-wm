@@ -10,37 +10,18 @@ public class Main {
 
     public static void main(final String[] args) {
         logger.info("Productive 4.0 Workflow Manager Demonstrator - Buyer System");
-        Front
-            .createAndBindTo(8080, new Front.RequestHandler() {
-                @Override
-                public OrderDto[] onGetOrders() {
-                    return new OrderDto[]{
-                        new OrderBuilder()
-                            .quantity(5)
-                            .articleId("ART-PM")
-                            .build(),
-                        new OrderBuilder()
-                            .quantity(1)
-                            .articleId("ART-DM")
-                            .build(),
-                        new OrderBuilder()
-                            .quantity(3)
-                            .articleId("ART-PP")
-                            .build(),
-                        new OrderBuilder()
-                            .quantity(18)
-                            .articleId("ART-DP")
-                            .build(),
-                    };
-                }
-
-                @Override
-                public void onOffer(OfferDto offer) {
-
-                }
-            })
-            .ifSuccess(front -> logger.info("Application front-end now available via port " + front.port()))
-            .onFailure(throwable -> logger.error("Failed to setup application front-end", throwable));
+        try {
+            final var back = Back.createAndBindTo(63001)
+                .ifFailure(Throwable.class, throwable -> logger.error("Failed to setup application back-end", throwable))
+                .await();
+            logger.info("Application back-end now available via port " + back.port());
+            Front.createAndBindTo(8080, back.handler())
+                .ifSuccess(front -> logger.info("Application front-end now available via port " + front.port()))
+                .onFailure(throwable -> logger.error("Failed to setup application front-end", throwable));
+        }
+        catch (final Throwable throwable) {
+            logger.error("Application start-up failed", throwable);
+        }
     }
 
     static {
