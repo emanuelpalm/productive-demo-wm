@@ -8,4 +8,10 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 public interface DataOrder {
     int quantity();
     String articleId();
+
+    default DataOrderBuilder rebuild() {
+        return new DataOrderBuilder()
+            .quantity(quantity())
+            .articleId(articleId());
+    }
 }

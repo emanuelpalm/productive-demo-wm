@@ -105,9 +105,7 @@ services:
     container_name: sys-buyer.uni
     build: sys-buyer
     volumes:
-      - ./crypto/uni/system.buyer.p12:/opt/keystore.buyer.p12
-      - ./crypto/uni/system.factory.p12:/opt/keystore.factory.p12
-      - ./crypto/uni/system.middleware.p12:/opt/keystore.middleware.p12
+      - ./crypto/uni/system.buyer.p12:/opt/keystore.p12
       - ./crypto/uni/truststore.p12:/opt/truststore.p12
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
@@ -141,7 +139,9 @@ services:
     container_name: sys-seller.uni
     build: sys-seller
     volumes:
-      - ./crypto/uni/system.seller.p12:/opt/keystore.p12
+      - ./crypto/uni/system.seller.p12:/opt/keystore.seller.p12
+      - ./crypto/uni/system.factory.p12:/opt/keystore.factory.p12
+      - ./crypto/uni/system.middleware.p12:/opt/keystore.middleware.p12
       - ./crypto/uni/truststore.p12:/opt/truststore.p12
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:

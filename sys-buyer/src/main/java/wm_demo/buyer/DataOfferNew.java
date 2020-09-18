@@ -10,7 +10,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoReadableAs(JSON)
 @DtoWritableAs(JSON)
 public interface DataOfferNew {
-    Optional<Integer> id();
+    Optional<Long> id();
 
     boolean drilled();
 

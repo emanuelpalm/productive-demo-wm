@@ -11,7 +11,7 @@ public class Main {
     public static void main(final String[] args) {
         logger.info("Productive 4.0 Workflow Manager Demonstrator - Buyer System");
         try {
-            final var back = Back.createAndBindTo(63001)
+            final var back = Back.createAndBindTo(9001)
                 .ifFailure(Throwable.class, throwable -> logger.error("Failed to setup application back-end", throwable))
                 .await();
             logger.info("Application back-end now available via port " + back.port());
