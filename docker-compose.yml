@@ -1,0 +1,182 @@
+version: "3"
+
+services:
+
+  # UTILITY CONTAINERS
+
+  mysql.uni:
+    container_name: mysql.uni
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    volumes:
+      - vol.mysql.uni:/var/lib/mysql
+      - ./scripts/arrowhead.sql:/docker-entrypoint-initdb.d/arrowhead.sql
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.5
+
+  management_tool.uni:
+    container_name: management_tool.uni
+    image: svetlint/management-tool:latest
+    environment:
+      - ARROWHEAD_AUTH_URL=https://172.3.1.10:8445
+      - ARROWHEAD_ORCH_URL=https://172.3.1.11:8441
+      - ARROWHEAD_SR_URL=https://172.3.1.12:8443
+    ports:
+      - 5000:5000
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.6
+
+  # CORE SYSTEMS
+
+  authorization.uni:
+    container_name: authorization.uni
+    image: svetlint/authorization:4.1.3
+    depends_on:
+      - mysql.uni
+    volumes:
+      - ./crypto/uni/authorization.p12:/authorization/keystore.p12
+      - ./crypto/uni/truststore.p12:/authorization/truststore.p12
+      - ./properties/uni/authorization.properties:/authorization/application.properties
+      - ./scripts/wait-for.sh:/authorization/wait-for.sh
+    ports:
+      - 8445:8445
+    command: ["/bin/bash", "-c", "cd /authorization && ./wait-for.sh service_registry.uni 8443 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-authorization.jar"]
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.10
+
+  orchestrator.uni:
+    container_name: orchestrator.uni
+    image: svetlint/orchestrator:4.1.3
+    depends_on:
+      - mysql.uni
+    volumes:
+      - ./crypto/uni/orchestrator.p12:/orchestrator/keystore.p12
+      - ./crypto/uni/truststore.p12:/orchestrator/truststore.p12
+      - ./properties/uni/orchestrator.properties:/orchestrator/application.properties
+      - ./scripts/wait-for.sh:/orchestrator/wait-for.sh
+    ports:
+      - 8441:8441
+    command: ["/bin/bash", "-c", "cd /orchestrator && ./wait-for.sh authorization.uni 8445 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-orchestrator.jar"]
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.11
+
+  service_registry.uni:
+    container_name: service_registry.uni
+    image: svetlint/serviceregistry:4.1.3
+    depends_on:
+      - mysql.uni
+    volumes:
+      - ./crypto/uni/service_registry.p12:/serviceregistry/keystore.p12
+      - ./crypto/uni/truststore.p12:/serviceregistry/truststore.p12
+      - ./properties/uni/service_registry.properties:/serviceregistry/application.properties
+      - ./scripts/wait-for.sh:/serviceregistry/wait-for.sh
+    ports:
+      - 8443:8443
+    command: ["/bin/bash", "-c", "cd /serviceregistry && ./wait-for.sh mysql.uni 3306 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-serviceregistry.jar"]
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.12
+
+  event_handler.uni:
+    container_name: event_handler.uni
+    image: svetlint/eventhandler:4.1.3
+    depends_on:
+      - mysql.uni
+    volumes:
+      - ./crypto/uni/event_handler.p12:/eventhandler/keystore.p12
+      - ./crypto/uni/truststore.p12:/eventhandler/truststore.p12
+      - ./properties/uni/event_handler.properties:/eventhandler/application.properties
+      - ./scripts/wait-for.sh:/eventhandler/wait-for.sh
+    ports:
+      - 8455:8455
+    command: ["/bin/bash", "-c", "cd /eventhandler && ./wait-for.sh orchestrator.uni 8441 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-eventhandler.jar"]
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.13
+
+  # BUYER SYSTEMS
+
+  sys-buyer.uni:
+    container_name: sys-buyer.uni
+    build: sys-buyer
+    volumes:
+      - ./crypto/uni/system.buyer.p12:/opt/keystore.buyer.p12
+      - ./crypto/uni/system.factory.p12:/opt/keystore.factory.p12
+      - ./crypto/uni/system.middleware.p12:/opt/keystore.middleware.p12
+      - ./crypto/uni/truststore.p12:/opt/truststore.p12
+      - ./scripts/wait-for.sh:/opt/wait-for.sh
+    ports:
+      - 9001:9001
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sys-seller.uni 9004 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-buyer.jar"]
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.16
+
+  contract-proxy-buyer.uni:
+    container_name: contract-proxy-buyer.uni
+    image: contract-proxy:latest
+    volumes:
+      - ./component-order.txt:/opt/component-order.txt
+      - ./crypto/uni/system.contract_proxy_buyer.p12:/opt/keystore.p12
+      - ./crypto/parties/buyer-counter-parties.p12:/opt/counter-parties.p12
+      - ./crypto/parties/buyer-owned-parties.p12:/opt/owned-parties.p12
+      - ./crypto/uni/truststore.p12:/opt/truststore.p12
+      - ./properties/uni/contract_proxy_buyer.properties:/opt/application.properties
+      - ./scripts/wait-for.sh:/opt/wait-for.sh
+    ports:
+      - 8901:8901
+    command: ["/bin/bash", "-c", "cd /opt && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.17
+
+  # SELLER SYSTEMS
+
+  sys-seller.uni:
+    container_name: sys-seller.uni
+    build: sys-seller
+    volumes:
+      - ./crypto/uni/system.seller.p12:/opt/keystore.p12
+      - ./crypto/uni/truststore.p12:/opt/truststore.p12
+      - ./scripts/wait-for.sh:/opt/wait-for.sh
+    ports:
+      - 9002:9002
+      - 9003:9003
+      - 9004:9004
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-seller.uni 8902 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-seller.jar"]
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.18
+
+  contract-proxy-seller.uni:
+    container_name: contract-proxy-seller.uni
+    image: contract-proxy:latest
+    volumes:
+      - ./component-order.txt:/opt/component-order.txt
+      - ./crypto/uni/system.contract_proxy_seller.p12:/opt/keystore.p12
+      - ./crypto/parties/seller-counter-parties.p12:/opt/counter-parties.p12
+      - ./crypto/parties/seller-owned-parties.p12:/opt/owned-parties.p12
+      - ./crypto/uni/truststore.p12:/opt/truststore.p12
+      - ./properties/uni/contract_proxy_seller.properties:/opt/application.properties
+      - ./scripts/wait-for.sh:/opt/wait-for.sh
+    ports:
+      - 8902:8902
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-buyer.uni 8901 && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
+    networks:
+      clouds:
+        ipv4_address: 172.3.1.19
+
+volumes:
+  vol.mysql.uni:
+    external: false
+
+networks:
+  clouds:
+    ipam:
+      config:
+        - subnet: 172.3.0.0/16

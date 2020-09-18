@@ -96,3 +96,42 @@ create_truststore \
   "crypto/arrowhead.crt" "arrowhead.eu" \
   "crypto/seller/cloud.crt" "demo.seller.arrowhead.eu"
 
+# Unified Cloud
+
+create_cloud_keystore \
+  "crypto/arrowhead.p12" "arrowhead.eu" \
+  "crypto/uni/cloud.p12" "demo.uni.arrowhead.eu"
+
+create_uni_system_keystore() {
+  SYSTEM_NAME=$1
+  SYSTEM_SAN=$2
+
+  create_system_keystore \
+    "crypto/arrowhead.p12" "arrowhead.eu" \
+    "crypto/uni/cloud.p12" "demo.uni.arrowhead.eu" \
+    "crypto/uni/system.${SYSTEM_NAME}.p12" "${SYSTEM_NAME}.demo.uni.arrowhead.eu" \
+    "${SYSTEM_SAN}"
+}
+
+create_uni_system_keystore "authorization"         "ip:172.3.1.10,dns:authorization.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "event_handler"         "ip:172.3.1.11,dns:event-handler.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "orchestrator"          "ip:172.3.1.14,dns:orchestrator.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "service_registry"      "ip:172.3.1.15,dns:service-registry.uni,dns:localhost,ip:127.0.0.1"
+
+create_uni_system_keystore "buyer"                 "ip:172.3.1.16,dns:buyer.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "contract_proxy_buyer"  "ip:172.3.1.17,dns:contract-proxy-buyer.uni,dns:localhost,ip:127.0.0.1"
+
+create_uni_system_keystore "factory"               "ip:172.3.1.18,dns:factory.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "middleware"            "ip:172.3.1.18,dns:middleware.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "seller"                "ip:172.3.1.18,dns:seller.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "contract_proxy_seller" "ip:172.3.1.19,dns:contract-proxy-seller.uni,dns:localhost,ip:127.0.0.1"
+
+create_sysop_keystore \
+  "crypto/arrowhead.p12" "arrowhead.eu" \
+  "crypto/uni/cloud.p12" "demo.uni.arrowhead.eu" \
+  "crypto/uni/sysop.p12" "sysop.demo.uni.arrowhead.eu"
+
+create_truststore \
+  "crypto/uni/truststore.p12" \
+  "crypto/arrowhead.crt" "arrowhead.eu" \
+  "crypto/uni/cloud.crt" "demo.uni.arrowhead.eu"

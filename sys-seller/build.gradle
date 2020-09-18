@@ -1,11 +1,12 @@
 plugins {
+    id 'com.github.johnrengelman.shadow' version '6.0.0'
     id 'application'
 }
 
 mainClassName = "${project.group}.seller.Main"
 
 ext {
-    versionArkalix = '0.4.4'
+    versionArkalix = '0.4.5-SNAPSHOT'
 }
 
 dependencies {
