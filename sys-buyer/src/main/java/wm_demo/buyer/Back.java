@@ -70,7 +70,24 @@ public class Back {
 
             @Override
             public DataOrderDto[] onGetOrders() {
-                return new DataOrderDto[0];
+                return new DataOrderDto[]{
+                    new DataOrderBuilder()
+                        .articleId("ART-DM")
+                        .quantity(4)
+                        .build(),
+                    new DataOrderBuilder()
+                        .articleId("ART-DP")
+                        .quantity(3)
+                        .build(),
+                    new DataOrderBuilder()
+                        .articleId("ART-PP")
+                        .quantity(12)
+                        .build(),
+                    new DataOrderBuilder()
+                        .articleId("ART-PM")
+                        .quantity(1)
+                        .build(),
+                };
             }
 
             @Override
