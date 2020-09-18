@@ -22,11 +22,6 @@
             margin-right: 1rem;
         }
 
-        body > section.offer {
-            display: flex;
-            flex-direction: column;
-        }
-
         h1 {
             font-size: 1.75rem;
             margin: 0 0 1rem 0;
@@ -53,9 +48,25 @@
             margin: 0;
         }
 
+        #offer-form:not(.counter-offer) > .counter-offer {
+            display: none;
+        }
+
+        #offer-form:not(.counter-offer) > .offer {
+            display: initial;
+        }
+
+        #offer-form.counter-offer > .counter-offer {
+            display: initial;
+        }
+
+        #offer-form.counter-offer > .offer {
+            display: none;
+        }
+
         #offer-form > select,
         #offer-form > input {
-            min-height: 2rem;
+            padding: 0.25rem;
         }
 
         #offer-form > label {
@@ -95,7 +106,8 @@
             display: block;
         }
 
-        .offers, .orders {
+        .offers,
+        .orders {
             background-color: #fff;
             border-radius: 0.5rem;
             box-shadow: 0 0.2rem 0.1rem #00000020;
@@ -104,6 +116,13 @@
             margin: 1rem 0;
             min-height: 27rem;
             padding: 1rem;
+        }
+
+        .offers {
+            width: 34rem;
+        }
+
+        .orders {
             width: 20rem;
         }
 
@@ -122,7 +141,7 @@
         }
 
         #offers:not(.error) {
-            grid-template-columns: 3rem 2rem 2rem 2rem 3rem auto;
+            grid-template-columns: 2.5rem 4.5rem 4.25rem 5.25rem 9rem auto;
         }
 
         #orders:not(.error) {
@@ -146,18 +165,51 @@
         #orders > div.number {
             text-align: right;
         }
+
+        #offers > div.accepted {
+            color: #23963E;
+        }
+
+        #offers > div.rejected {
+            color: #96232D;
+        }
+
+        #offers > div.countered {
+            color: #968341;
+        }
+
+        #offers > div.status.countered:hover {
+            border-color: #968341;
+            cursor: pointer;
+        }
     </style>
     <script>
         window.onload = function() {
+            let savedOfferFormData = {};
+
             const $offerForm = document.getElementById("offer-form");
             $offerForm.addEventListener("submit", function(event) {
                 event.preventDefault();
                 document.activeElement.blur();
                 setOfferFormDisabled(true);
-                statusInfo("Sending offer ...");
-                postJson("/offers", getOfferFormData())
+
+                const data = getOfferFormData();
+                if (data.id) {
+                    statusInfo("Sending counter-offer #" + data.id + " response ...");
+                }
+                else {
+                    statusInfo("Sending offer ...");
+                }
+                postJson("/offers", data)
                     .then(function(response) {
-                        statusInfo("Offer submitted.");
+                        if (data.id) {
+                            setOfferFormData(savedOfferFormData);
+                            statusInfo("Counter-offer #" + data.id + " response submitted.");
+                            $offerForm.classList.remove("counter-offer");
+                        }
+                        else {
+                            statusInfo("Offer submitted.");
+                        }
                     })
                     .catch(function(error) {
                         console.log(error);
@@ -186,22 +238,22 @@
 
                             const $h2 = document.createElement("div");
                             $h2.className = "header";
-                            $h2.innerText = "D?";
+                            $h2.innerText = "Drilled?";
                             $offers.appendChild($h2);
 
                             const $h3 = document.createElement("div");
                             $h3.className = "header";
-                            $h3.innerText = "M?";
+                            $h3.innerText = "Milled?";
                             $offers.appendChild($h3);
 
                             const $h4 = document.createElement("div");
                             $h4.className = "header";
-                            $h4.innerText = "Q";
+                            $h4.innerText = "Quantity";
                             $offers.appendChild($h4);
 
                             const $h5 = document.createElement("div");
                             $h5.className = "header";
-                            $h5.innerText = "UP";
+                            $h5.innerText = "Unit Price, EUR";
                             $offers.appendChild($h5);
 
                             const $h6 = document.createElement("div");
@@ -212,40 +264,42 @@
                             (offers || []).forEach(function(offer) {
                                 const $id = document.createElement("div");
                                 $id.classList.add("number");
-                                $id.classList.add(offer.status);
+                                $id.classList.add(offer.status.toLowerCase());
                                 $id.innerText = offer.id;
                                 $offers.appendChild($id);
 
                                 const $drilled = document.createElement("div");
-                                $drilled.innerText = offer.drilled;
-                                $drilled.classList.add(offer.status);
+                                $drilled.innerText = offer.drilled ? "Yes" : "No";
+                                $drilled.classList.add(offer.status.toLowerCase());
                                 $offers.appendChild($drilled);
 
                                 const $milled = document.createElement("div");
-                                $milled.innerText = offer.milled;
-                                $milled.classList.add(offer.status);
+                                $milled.innerText = offer.milled ? "Yes" : "No";
+                                $milled.classList.add(offer.status.toLowerCase());
                                 $offers.appendChild($milled);
 
                                 const $quantity = document.createElement("div");
                                 $quantity.classList.add("number");
-                                $quantity.classList.add(offer.status);
+                                $quantity.classList.add(offer.status.toLowerCase());
                                 $quantity.innerText = offer.quantity;
                                 $offers.appendChild($quantity);
 
                                 const $pricePerUnit = document.createElement("div");
-                                $pricePerUnit.innerText = offer.pricePerUnit;
+                                $pricePerUnit.innerText = offer.pricePerUnit.toFixed(2);
                                 $pricePerUnit.classList.add("number");
-                                $pricePerUnit.classList.add(offer.status);
+                                $pricePerUnit.classList.add(offer.status.toLowerCase());
                                 $offers.appendChild($pricePerUnit);
 
                                 const $status = document.createElement("div");
                                 $status.innerText = offer.status;
                                 $status.classList.add("status");
-                                $status.classList.add(offer.status);
+                                $status.classList.add(offer.status.toLowerCase());
                                 if (offer.status.toUpperCase() === "COUNTERED") {
                                     $status.addEventListener("click", function(event) {
                                         event.preventDefault();
+                                        savedOfferFormData = getOfferFormData();
                                         setOfferFormData(offer.counterOffer);
+                                        $offerForm.classList.add("counter-offer");
                                     });
                                 }
                                 $offers.appendChild($status);
@@ -314,48 +368,78 @@
 
         function getOfferFormData() {
             const data = {};
-            document.querySelectorAll("#offer-form > select, #offer-form > input").forEach(function($element) {
+            document.querySelectorAll("#offer-form select, #offer-form input, #offer-form .input").forEach(function($element) {
                 let value;
-                if ($element.classList.contains("boolean")) {
-                    value = $element.value.trim().toLowerCase();
+
+                let getValue;
+                let hasClass;
+                let getName;
+
+                if ($element.value !== undefined) {
+                    getValue = function() { return $element.value; };
+                    hasClass = function(class_) { return $element.classList.contains(class_); };
+                    getName = function() { return $element.name; };
+                }
+                else {
+                    getValue = function() { return $element.innerText; };
+                    hasClass = function(class_) {
+                        return $element.getAttribute("data-class").split(/\s+/).includes(class_);
+                    };
+                    getName = function() { return $element.getAttribute("data-name"); };
+                }
+
+                if (hasClass("boolean")) {
+                    value = getValue().trim().toLowerCase();
                     if (value === "true") {
                         value = true;
-                    } else if (value === "false") {
+                    }
+                    else if (value === "false") {
                         value = false;
                     }
                     else {
-                        throw new Error("Invalid boolean value: " + $element.value);
+                        throw new Error("Invalid boolean value: " + getValue());
                     }
                 }
-                else if ($element.classList.contains("number")) {
-                    value = Number.parseFloat($element.value);
+                else if (hasClass("number")) {
+                    value = Number.parseFloat(getValue());
                 }
-                else if ($element.classList.contains("text")) {
-                    value = $element.value.trim();
+                else if (hasClass("text")) {
+                    value = getValue().trim();
                 }
                 else {
                     return;
                 }
-                data[$element.name] = value;
+                data[getName()] = value;
             });
             return data;
         }
 
         function setOfferFormData(data) {
-            document.querySelectorAll("#offer-form > select, #offer-form > input").forEach(function($element) {
-                const value = data[$element.name];
-                if (typeof value !== "undefined" && ($element.classList.contains("boolean") ||
-                    $element.classList.contains("number") ||
-                    $element.classList.contains("text")))
-                {
-                    $element.value = value;
+            document.querySelectorAll("#offer-form select, #offer-form input, #offer-form .input").forEach(function($element) {
+                let name = $element.name;
+                if (name === undefined) {
+                    name = $element.getAttribute("data-name");
+                }
+                const value = data[name];
+                if ((typeof value === "string" && value.trim().length > 0) || (value !== undefined && value !== NaN)) {
+                    if ($element.value !== undefined) {
+                        $element.value = value;
+                    }
+                    else {
+                        $element.innerText = value;
+                    }
                 }
             });
         }
 
         function setOfferFormDisabled(isDisabled) {
-            document.querySelectorAll("#offer-form > select, #offer-form > input").forEach(function($element) {
-                $element.disabled = isDisabled;
+            document.querySelectorAll("#offer-form select, #offer-form input, #offer-form .input.editable").forEach(function($element) {
+                if ($element.value !== undefined) {
+                    $element.disabled = isDisabled;
+                }
+                else {
+                    $element.contentEditable = !isDisabled;
+                }
             });
         }
 
@@ -364,20 +448,11 @@
         function statusError(message) { status("error", message); }
         function statusInfo(message) { status("info", message); }
 
-        let statusTimeout;
         function status(type, message) {
             console.log(type + ": " + message);
             const $status = document.getElementById("status");
             $status.className = type;
             $status.innerText = message;
-            if (statusTimeout) {
-                clearTimeout(statusTimeout);
-            }
-            statusTimeout = setTimeout(function() {
-                $status.className = "";
-                $status.innerText = "";
-                statusTimeout = undefined;
-            }, 3000 + message.length * 60);
         }
 
         function getJson(url, headers) {
@@ -430,7 +505,8 @@
                 xhr.addEventListener("load", function() {
                     if (this.status >= 200 && this.status <= 299) {
                         resolve(this);
-                    } else {
+                    }
+                    else {
                         reject({
                             "name": "badResponseStatus",
                             "message": "An unexpected status code was received from server (" + this.status + ").",
@@ -463,8 +539,9 @@
 </head>
 <body>
     <section class="offer">
-        <form id="offer-form">
-            <h1>New Offer</h1>
+        <form id="offer-form" autocomplete="off">
+            <h1 class="offer">New Offer</h1>
+            <h1 class="counter-offer">Counter-Offer #<span class="input" data-name="id" data-class="number"></span></h1>
             <label>Drilled?</label>
             <select name="drilled" class="boolean">
                 <option value="true">Yes</option>

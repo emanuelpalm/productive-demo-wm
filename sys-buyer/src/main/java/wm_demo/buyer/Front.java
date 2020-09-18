@@ -79,7 +79,7 @@ public class Front {
                     })
 
                     .post("/offers", (request, response) -> request
-                        .bodyAs(DataOfferUserDto.class)
+                        .bodyAs(DataOfferNewDto.class)
                         .flatMap(handler::onOffer)
                         .ifSuccess(ignored -> response.status(OK))))
 
@@ -95,10 +95,10 @@ public class Front {
     }
 
     public interface RequestHandler {
+        DataOfferDto[] onGetOffers();
+
         DataOrderDto[] onGetOrders();
 
-        DataOfferBackDto[] onGetOffers();
-
-        Future<?> onOffer(final DataOfferUserDto offer);
+        Future<?> onOffer(final DataOfferNewDto offer);
     }
 }

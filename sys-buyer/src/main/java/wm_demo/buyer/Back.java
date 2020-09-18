@@ -16,17 +16,65 @@ public class Back {
     public Front.RequestHandler handler() {
         return new Front.RequestHandler() {
             @Override
+            public DataOfferDto[] onGetOffers() {
+                return new DataOfferDto[]{
+                    new DataOfferBuilder()
+                        .id(207)
+                        .drilled(true)
+                        .milled(false)
+                        .quantity(4)
+                        .pricePerUnit(320.00)
+                        .status(DataOffer.Status.PENDING)
+                        .build(),
+                    new DataOfferBuilder()
+                        .id(193)
+                        .drilled(true)
+                        .milled(true)
+                        .quantity(8)
+                        .pricePerUnit(302.75)
+                        .status(DataOffer.Status.ACCEPTED)
+                        .build(),
+                    new DataOfferBuilder()
+                        .id(132)
+                        .drilled(false)
+                        .milled(false)
+                        .quantity(30)
+                        .pricePerUnit(104.40)
+                        .status(DataOffer.Status.REJECTED)
+                        .build(),
+                    new DataOfferBuilder()
+                        .id(107)
+                        .drilled(true)
+                        .milled(false)
+                        .quantity(20)
+                        .pricePerUnit(400.50)
+                        .status(DataOffer.Status.COUNTERED)
+                        .counterOffer(new DataOfferNewBuilder()
+                            .id(107)
+                            .drilled(true)
+                            .milled(false)
+                            .quantity(50)
+                            .pricePerUnit(400.00)
+                            .build())
+                        .build(),
+                    new DataOfferBuilder()
+                        .id(32)
+                        .drilled(true)
+                        .milled(true)
+                        .quantity(8)
+                        .pricePerUnit(302.75)
+                        .status(DataOffer.Status.ACCEPTED)
+                        .build(),
+                };
+            }
+
+            @Override
             public DataOrderDto[] onGetOrders() {
                 return new DataOrderDto[0];
             }
 
             @Override
-            public DataOfferBackDto[] onGetOffers() {
-                return new DataOfferBackDto[0];
-            }
-
-            @Override
-            public Future<?> onOffer(DataOfferUserDto offer) {
+            public Future<?> onOffer(DataOfferNewDto offer) {
                 return Future.done();
             }
         };

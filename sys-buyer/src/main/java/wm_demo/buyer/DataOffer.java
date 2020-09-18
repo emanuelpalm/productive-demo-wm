@@ -7,7 +7,7 @@ import java.util.Optional;
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 @DtoWritableAs(JSON)
-public interface DataOfferBack {
+public interface DataOffer {
     int id();
 
     boolean drilled();
@@ -20,7 +20,7 @@ public interface DataOfferBack {
 
     Status status();
 
-    Optional<DataOfferBack> counterOffer();
+    Optional<DataOfferNew> counterOffer();
 
     enum Status {
         ACCEPTED,
