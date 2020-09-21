@@ -31,6 +31,7 @@ public class Back {
 
     private final Map<Long, DataOfferDto> offers = new ConcurrentHashMap<>();
     private final Map<String, DataOrderDto> orders = new ConcurrentHashMap<>();
+    private final Map<Long, CounterOffer> pendingCounterOffers = new ConcurrentHashMap<>();
 
     private Back(final ArSystem system, final ArTrustedContractNegotiatorPluginFacade facade) {
         this.system = system;
@@ -101,8 +102,6 @@ public class Back {
 
             @Override
             public Future<?> onOffer(final DataOfferNewDto offer) {
-                // TODO: Special handling if counter-offer (offer.id is set)
-
                 final var articleId = "ART-" +
                     (offer.drilled() ? "D" : "P") +
                     (offer.milled() ? "M" : "P");
@@ -115,6 +114,22 @@ public class Back {
                         "unit-price", "" + offer.pricePerUnit()
                     ))
                     .build();
+
+                // Handle counter-offer replies.
+                if (offer.id().isPresent()) {
+                    final var id = offer.id().get();
+                    final var counterOffer = pendingCounterOffers.remove(id);
+                    if (counterOffer == null) {
+                        throw new IllegalStateException("No pending counter-offer with ID " + id + " exists");
+                    }
+                    if (contract.equals(counterOffer.contract)) {
+                        return counterOffer.responder.accept();
+                    }
+                    return counterOffer.responder.offer(new SimplifiedContractCounterOffer.Builder()
+                        .contracts(contract)
+                        .validFor(Duration.ofMinutes(3))
+                        .build());
+                }
 
                 final AtomicLong id = new AtomicLong(-1);
 
@@ -155,7 +170,19 @@ public class Back {
 
                         @Override
                         public void onOffer(final TrustedContractNegotiationDto negotiation, final TrustedContractNegotiatorResponder responder) {
-                            throw new UnsupportedOperationException(); // TODO: Implement.
+                            final var contracts = negotiation.offer().contracts();
+                            if (contracts.size() != 0) {
+                                throw new IllegalArgumentException("Negotiation offer must contain exactly one contract");
+                            }
+                            pendingCounterOffers.put(negotiation.id(), new CounterOffer(
+                                negotiation.offer()
+                                    .contracts()
+                                    .get(0),
+                                responder
+                            ));
+                            offers.computeIfPresent(negotiation.id(), (id, offer) -> offer.rebuild()
+                                .status(DataOffer.Status.COUNTERED)
+                                .build());
                         }
 
                         @Override
@@ -183,5 +210,15 @@ public class Back {
                 return done();
             }
         };
+    }
+
+    static class CounterOffer {
+        final TrustedContract contract;
+        final TrustedContractNegotiatorResponder responder;
+
+        CounterOffer(final TrustedContract contract, final TrustedContractNegotiatorResponder responder) {
+            this.contract = contract;
+            this.responder = responder;
+        }
     }
 }
