@@ -48,9 +48,9 @@ public class Back {
                     .keyPassword(password)
                     .load())
                 .trustStore(TrustStore.read("truststore.p12", password))
-                .localHostnamePort("172.3.1.16", port)
+                .localHostnamePort("10.1.3.16", port)
                 .plugins(
-                    HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress("172.3.1.12", 8443)),
+                    HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress("10.1.3.12", 8443)),
                     new HttpJsonTrustedContractNegotiatorPlugin())
                 .buildAsync()
                 .flatMap(system -> {

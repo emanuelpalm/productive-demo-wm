@@ -1,10 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SLEEP_SECONDS=10
 
-set -e
+echo "Waiting for $1:$2 ..."
 
 until (echo > "/dev/tcp/$1/$2") >/dev/null 2>&1; do
+  echo "$2"
   sleep 1
 done
 

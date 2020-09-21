@@ -13,21 +13,21 @@ services:
       - vol.mysql.uni:/var/lib/mysql
       - ./scripts/arrowhead.sql:/docker-entrypoint-initdb.d/arrowhead.sql
     networks:
-      clouds:
-        ipv4_address: 172.3.1.5
+      uni:
+        ipv4_address: 10.1.3.5
 
-  management-tool.uni:
-    container_name: management-tool.uni
-    image: svetlint/management-tool:latest
-    environment:
-      - ARROWHEAD_AUTH_URL=https://172.3.1.10:8445
-      - ARROWHEAD_ORCH_URL=https://172.3.1.11:8441
-      - ARROWHEAD_SR_URL=https://172.3.1.12:8443
-    ports:
-      - 5000:5000
-    networks:
-      clouds:
-        ipv4_address: 172.3.1.6
+#  management-tool.uni:
+#    container_name: management-tool.uni
+#    image: svetlint/management-tool:latest
+#    environment:
+#      - REACT_APP_ARROWHEAD_AUTH_URL=https://10.1.3.10:8445
+#      - REACT_APP_ARROWHEAD_ORCH_URL=https://10.1.3.11:8441
+#      - REACT_APP_ARROWHEAD_SR_URL=https://10.1.3.12:8443
+#    ports:
+#      - 5000:5000
+#    networks:
+#      uni:
+#        ipv4_address: 10.1.3.6
 
   # CORE SYSTEMS
 
@@ -37,7 +37,7 @@ services:
     depends_on:
       - mysql.uni
     volumes:
-      - ./crypto/uni/authorization.p12:/authorization/keystore.p12
+      - ./crypto/uni/system.authorization.p12:/authorization/keystore.p12
       - ./crypto/uni/truststore.p12:/authorization/truststore.p12
       - ./properties/uni/authorization.properties:/authorization/application.properties
       - ./scripts/wait-for.sh:/authorization/wait-for.sh
@@ -45,8 +45,8 @@ services:
       - 8445:8445
     command: ["/bin/bash", "-c", "cd /authorization && ./wait-for.sh service-registry.uni 8443 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-authorization.jar"]
     networks:
-      clouds:
-        ipv4_address: 172.3.1.10
+      uni:
+        ipv4_address: 10.1.3.10
 
   orchestrator.uni:
     container_name: orchestrator.uni
@@ -54,7 +54,7 @@ services:
     depends_on:
       - mysql.uni
     volumes:
-      - ./crypto/uni/orchestrator.p12:/orchestrator/keystore.p12
+      - ./crypto/uni/system.orchestrator.p12:/orchestrator/keystore.p12
       - ./crypto/uni/truststore.p12:/orchestrator/truststore.p12
       - ./properties/uni/orchestrator.properties:/orchestrator/application.properties
       - ./scripts/wait-for.sh:/orchestrator/wait-for.sh
@@ -62,8 +62,8 @@ services:
       - 8441:8441
     command: ["/bin/bash", "-c", "cd /orchestrator && ./wait-for.sh authorization.uni 8445 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-orchestrator.jar"]
     networks:
-      clouds:
-        ipv4_address: 172.3.1.11
+      uni:
+        ipv4_address: 10.1.3.11
 
   service-registry.uni:
     container_name: service-registry.uni
@@ -71,7 +71,7 @@ services:
     depends_on:
       - mysql.uni
     volumes:
-      - ./crypto/uni/service_registry.p12:/serviceregistry/keystore.p12
+      - ./crypto/uni/system.service_registry.p12:/serviceregistry/keystore.p12
       - ./crypto/uni/truststore.p12:/serviceregistry/truststore.p12
       - ./properties/uni/service_registry.properties:/serviceregistry/application.properties
       - ./scripts/wait-for.sh:/serviceregistry/wait-for.sh
@@ -79,8 +79,8 @@ services:
       - 8443:8443
     command: ["/bin/bash", "-c", "cd /serviceregistry && ./wait-for.sh mysql.uni 3306 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-serviceregistry.jar"]
     networks:
-      clouds:
-        ipv4_address: 172.3.1.12
+      uni:
+        ipv4_address: 10.1.3.12
 
   event-handler.uni:
     container_name: event-handler.uni
@@ -88,7 +88,7 @@ services:
     depends_on:
       - mysql.uni
     volumes:
-      - ./crypto/uni/event_handler.p12:/eventhandler/keystore.p12
+      - ./crypto/uni/system.event_handler.p12:/eventhandler/keystore.p12
       - ./crypto/uni/truststore.p12:/eventhandler/truststore.p12
       - ./properties/uni/event_handler.properties:/eventhandler/application.properties
       - ./scripts/wait-for.sh:/eventhandler/wait-for.sh
@@ -96,8 +96,8 @@ services:
       - 8455:8455
     command: ["/bin/bash", "-c", "cd /eventhandler && ./wait-for.sh orchestrator.uni 8441 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-eventhandler.jar"]
     networks:
-      clouds:
-        ipv4_address: 172.3.1.13
+      uni:
+        ipv4_address: 10.1.3.13
 
   # BUYER SYSTEMS
 
@@ -110,14 +110,14 @@ services:
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
       - 9001:9001
-    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sys-seller.uni 9004 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-buyer.jar"]
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sys-seller.uni 9002 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-buyer.jar"]
     networks:
-      clouds:
-        ipv4_address: 172.3.1.16
+      uni:
+        ipv4_address: 10.1.3.16
 
   contract-proxy-buyer.uni:
     container_name: contract-proxy-buyer.uni
-    image: contract-proxy:latest
+    image: arrowhead-contract-proxy:latest
     volumes:
       - ./component-order.txt:/opt/component-order.txt
       - ./crypto/uni/system.contract_proxy_buyer.p12:/opt/keystore.p12
@@ -128,10 +128,10 @@ services:
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
       - 8901:8901
-    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh event-handler.uni 9004 && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh event-handler.uni 8455 && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
     networks:
-      clouds:
-        ipv4_address: 172.3.1.17
+      uni:
+        ipv4_address: 10.1.3.17
 
   # SELLER SYSTEMS
 
@@ -150,12 +150,12 @@ services:
       - 9004:9004
     command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-seller.uni 8902 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-seller.jar"]
     networks:
-      clouds:
-        ipv4_address: 172.3.1.18
+      uni:
+        ipv4_address: 10.1.3.18
 
   contract-proxy-seller.uni:
     container_name: contract-proxy-seller.uni
-    image: contract-proxy:latest
+    image: arrowhead-contract-proxy:latest
     volumes:
       - ./component-order.txt:/opt/component-order.txt
       - ./crypto/uni/system.contract_proxy_seller.p12:/opt/keystore.p12
@@ -168,15 +168,15 @@ services:
       - 8902:8902
     command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-buyer.uni 8901 && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
     networks:
-      clouds:
-        ipv4_address: 172.3.1.19
+      uni:
+        ipv4_address: 10.1.3.19
 
 volumes:
   vol.mysql.uni:
     external: false
 
 networks:
-  clouds:
+  uni:
     ipam:
       config:
-        - subnet: 172.3.0.0/16
+        - subnet: 10.3.0.0/16

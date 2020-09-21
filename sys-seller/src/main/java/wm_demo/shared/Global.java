@@ -3,8 +3,8 @@ package wm_demo.shared;
 public class Global {
     private Global() {}
 
-    public static final String ADDRESS_LOCAL = "172.3.1.18";
-    public static final String ADDRESS_SR = "172.3.1.12";
+    public static final String ADDRESS_LOCAL = "10.1.3.18";
+    public static final String ADDRESS_SR = "10.1.3.12";
 
     public static final String KEYSTORE_FACTORY = "keystore.factory.p12";
     public static final String KEYSTORE_MIDDLEWARE = "keystore.middleware.p12";
