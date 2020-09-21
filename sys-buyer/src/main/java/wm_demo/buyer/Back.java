@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.HttpJsonCloudPlugin;
 import se.arkalix.core.plugin.cp.*;
+import se.arkalix.net.http.service.HttpService;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.concurrent.Future;
@@ -15,6 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static se.arkalix.descriptor.EncodingDescriptor.JSON;
+import static se.arkalix.net.http.HttpStatus.CREATED;
+import static se.arkalix.net.http.HttpStatus.OK;
+import static se.arkalix.security.access.AccessPolicy.token;
+import static se.arkalix.util.concurrent.Future.done;
 
 public class Back {
     private static final Logger logger = LoggerFactory.getLogger(Back.class);
@@ -45,14 +52,30 @@ public class Back {
                     HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress("172.3.1.12", 8443)),
                     new HttpJsonTrustedContractNegotiatorPlugin())
                 .buildAsync()
-                .map(system -> {
-                    final var facade = system.pluginFacadeOf(HttpJsonTrustedContractNegotiatorPlugin.class)
+                .flatMap(system -> {
+                    final var facade = system
+                        .pluginFacadeOf(HttpJsonTrustedContractNegotiatorPlugin.class)
                         .map(f -> (ArTrustedContractNegotiatorPluginFacade) f)
                         .orElseThrow(() -> new IllegalStateException("No " +
                             "HttpJsonTrustedContractNegotiatorPlugin is " +
                             "available; cannot negotiate"));
 
-                    return new Back(system, facade);
+                    final var back = new Back(system, facade);
+
+                    return system.provide(new HttpService()
+                        .name("buyer-back-end")
+                        .encodings(JSON)
+                        .accessPolicy(token())
+                        .basePath("/")
+
+                        .post("/orders", (request, response) -> request
+                            .bodyAs(DataOrderDto.class)
+                            .ifSuccess(order -> {
+                                final var isCreated = back.orders.put(order.articleId(), order) == null;
+                                response.status(isCreated ? CREATED : OK);
+                            })))
+
+                        .pass(back);
                 });
         }
         catch (final Throwable throwable) {
@@ -77,7 +100,9 @@ public class Back {
             }
 
             @Override
-            public Future<?> onOffer(DataOfferNewDto offer) {
+            public Future<?> onOffer(final DataOfferNewDto offer) {
+                // TODO: Special handling if counter-offer (offer.id is set)
+
                 final var articleId = "ART-" +
                     (offer.drilled() ? "D" : "P") +
                     (offer.milled() ? "M" : "P");
@@ -155,7 +180,7 @@ public class Back {
                                 .build());
                         }
                     });
-                return Future.done();
+                return done();
             }
         };
     }

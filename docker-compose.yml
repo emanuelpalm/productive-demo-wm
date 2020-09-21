@@ -16,8 +16,8 @@ services:
       clouds:
         ipv4_address: 172.3.1.5
 
-  management_tool.uni:
-    container_name: management_tool.uni
+  management-tool.uni:
+    container_name: management-tool.uni
     image: svetlint/management-tool:latest
     environment:
       - ARROWHEAD_AUTH_URL=https://172.3.1.10:8445
@@ -43,7 +43,7 @@ services:
       - ./scripts/wait-for.sh:/authorization/wait-for.sh
     ports:
       - 8445:8445
-    command: ["/bin/bash", "-c", "cd /authorization && ./wait-for.sh service_registry.uni 8443 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-authorization.jar"]
+    command: ["/bin/bash", "-c", "cd /authorization && ./wait-for.sh service-registry.uni 8443 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-authorization.jar"]
     networks:
       clouds:
         ipv4_address: 172.3.1.10
@@ -65,8 +65,8 @@ services:
       clouds:
         ipv4_address: 172.3.1.11
 
-  service_registry.uni:
-    container_name: service_registry.uni
+  service-registry.uni:
+    container_name: service-registry.uni
     image: svetlint/serviceregistry:4.1.3
     depends_on:
       - mysql.uni
@@ -82,8 +82,8 @@ services:
       clouds:
         ipv4_address: 172.3.1.12
 
-  event_handler.uni:
-    container_name: event_handler.uni
+  event-handler.uni:
+    container_name: event-handler.uni
     image: svetlint/eventhandler:4.1.3
     depends_on:
       - mysql.uni
@@ -128,7 +128,7 @@ services:
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
       - 8901:8901
-    command: ["/bin/bash", "-c", "cd /opt && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh event-handler.uni 9004 && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
     networks:
       clouds:
         ipv4_address: 172.3.1.17

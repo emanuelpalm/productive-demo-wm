@@ -41,7 +41,7 @@ public class Front {
 
     public static Future<Front> createAndBindTo(final int port, final RequestHandler handler) {
         return new ArSystem.Builder()
-            .name("front-end-" + port)
+            .name("buyer-front-end")
             .insecure()
             .localPort(port)
             .buildAsync()
