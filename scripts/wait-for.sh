@@ -5,7 +5,6 @@ SLEEP_SECONDS=10
 echo "Waiting for $1:$2 ..."
 
 until (echo > "/dev/tcp/$1/$2") >/dev/null 2>&1; do
-  echo "$2"
   sleep 1
 done
 

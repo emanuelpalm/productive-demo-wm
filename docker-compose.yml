@@ -16,18 +16,18 @@ services:
       uni:
         ipv4_address: 10.1.3.5
 
-#  management-tool.uni:
-#    container_name: management-tool.uni
-#    image: svetlint/management-tool:latest
-#    environment:
-#      - REACT_APP_ARROWHEAD_AUTH_URL=https://10.1.3.10:8445
-#      - REACT_APP_ARROWHEAD_ORCH_URL=https://10.1.3.11:8441
-#      - REACT_APP_ARROWHEAD_SR_URL=https://10.1.3.12:8443
-#    ports:
-#      - 5000:5000
-#    networks:
-#      uni:
-#        ipv4_address: 10.1.3.6
+  management-tool.uni:
+    container_name: management-tool.uni
+    image: svetlint/management-tool:latest
+    environment:
+      - REACT_APP_ARROWHEAD_AUTH_URL=https://authorization.uni:8445
+      - REACT_APP_ARROWHEAD_ORCH_URL=https://orchestrator.uni:8441
+      - REACT_APP_ARROWHEAD_SR_URL=https://service-registry.uni:8443
+    ports:
+      - 5000:5000
+    networks:
+      uni:
+        ipv4_address: 10.1.3.6
 
   # CORE SYSTEMS
 
@@ -63,7 +63,7 @@ services:
     command: ["/bin/bash", "-c", "cd /orchestrator && ./wait-for.sh authorization.uni 8445 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-orchestrator.jar"]
     networks:
       uni:
-        ipv4_address: 10.1.3.11
+        ipv4_address: 10.1.3.14
 
   service-registry.uni:
     container_name: service-registry.uni
@@ -80,7 +80,7 @@ services:
     command: ["/bin/bash", "-c", "cd /serviceregistry && ./wait-for.sh mysql.uni 3306 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-serviceregistry.jar"]
     networks:
       uni:
-        ipv4_address: 10.1.3.12
+        ipv4_address: 10.1.3.15
 
   event-handler.uni:
     container_name: event-handler.uni
@@ -97,7 +97,7 @@ services:
     command: ["/bin/bash", "-c", "cd /eventhandler && ./wait-for.sh orchestrator.uni 8441 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-eventhandler.jar"]
     networks:
       uni:
-        ipv4_address: 10.1.3.13
+        ipv4_address: 10.1.3.11
 
   # BUYER SYSTEMS
 
@@ -179,4 +179,4 @@ networks:
   uni:
     ipam:
       config:
-        - subnet: 10.3.0.0/16
+        - subnet: 10.1.0.0/16

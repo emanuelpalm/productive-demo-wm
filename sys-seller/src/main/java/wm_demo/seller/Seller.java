@@ -31,9 +31,9 @@ public class Seller {
                     .keyPassword(password)
                     .load())
                 .trustStore(TrustStore.read(Global.TRUSTSTORE, password))
-                .localHostnamePort(Global.ADDRESS_LOCAL, port)
+                .localHostnamePort(Global.HOSTNAME_LOCAL, port)
                 .plugins(
-                    HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress(Global.ADDRESS_SR, Global.PORT_SR)),
+                    HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress(Global.HOSTNAME_SR, Global.PORT_SR)),
                     new HttpJsonTrustedContractNegotiatorPlugin())
                 .buildAsync()
                 .map(system -> {
