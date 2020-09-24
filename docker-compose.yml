@@ -18,16 +18,31 @@ services:
 
   management-tool.uni:
     container_name: management-tool.uni
-    image: svetlint/management-tool:latest
+    image: management-tool:latest
     environment:
-      - REACT_APP_ARROWHEAD_AUTH_URL=https://authorization.uni:8445
-      - REACT_APP_ARROWHEAD_ORCH_URL=https://orchestrator.uni:8441
-      - REACT_APP_ARROWHEAD_SR_URL=https://service-registry.uni:8443
+      - ARROWHEAD_AUTH_URL=https://10.1.3.10:8445
+      - ARROWHEAD_ORCH_URL=https://10.1.3.14:8441
+      - ARROWHEAD_SR_URL=https://10.1.3.15:8443
     ports:
-      - 5000:5000
+      - 80:80
     networks:
       uni:
         ipv4_address: 10.1.3.6
+
+  sysop-configurator.uni:
+    container_name: sysop-configurator.uni
+    build: sysop-configurator
+    volumes:
+      - ./config/crypto/uni/sysop.p12:/opt/keystore.p12
+      - ./config/crypto/uni/truststore.p12:/opt/truststore.p12
+      - ./config/sysop/uni.json:/opt/config.json
+      - ./scripts/wait-for.sh:/opt/wait-for.sh
+    ports:
+      - 9999:9999
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-seller.uni 8902 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sysop-configurator.jar"]
+    networks:
+      uni:
+        ipv4_address: 10.1.3.7
 
   # CORE SYSTEMS
 
@@ -37,9 +52,9 @@ services:
     depends_on:
       - mysql.uni
     volumes:
-      - ./crypto/uni/system.authorization.p12:/authorization/keystore.p12
-      - ./crypto/uni/truststore.p12:/authorization/truststore.p12
-      - ./properties/uni/authorization.properties:/authorization/application.properties
+      - ./config/crypto/uni/system.authorization.p12:/authorization/keystore.p12
+      - ./config/crypto/uni/truststore.p12:/authorization/truststore.p12
+      - ./config/properties/uni/authorization.properties:/authorization/application.properties
       - ./scripts/wait-for.sh:/authorization/wait-for.sh
     ports:
       - 8445:8445
@@ -54,9 +69,9 @@ services:
     depends_on:
       - mysql.uni
     volumes:
-      - ./crypto/uni/system.orchestrator.p12:/orchestrator/keystore.p12
-      - ./crypto/uni/truststore.p12:/orchestrator/truststore.p12
-      - ./properties/uni/orchestrator.properties:/orchestrator/application.properties
+      - ./config/crypto/uni/system.orchestrator.p12:/orchestrator/keystore.p12
+      - ./config/crypto/uni/truststore.p12:/orchestrator/truststore.p12
+      - ./config/properties/uni/orchestrator.properties:/orchestrator/application.properties
       - ./scripts/wait-for.sh:/orchestrator/wait-for.sh
     ports:
       - 8441:8441
@@ -71,9 +86,9 @@ services:
     depends_on:
       - mysql.uni
     volumes:
-      - ./crypto/uni/system.service_registry.p12:/serviceregistry/keystore.p12
-      - ./crypto/uni/truststore.p12:/serviceregistry/truststore.p12
-      - ./properties/uni/service_registry.properties:/serviceregistry/application.properties
+      - ./config/crypto/uni/system.service_registry.p12:/serviceregistry/keystore.p12
+      - ./config/crypto/uni/truststore.p12:/serviceregistry/truststore.p12
+      - ./config/properties/uni/service_registry.properties:/serviceregistry/application.properties
       - ./scripts/wait-for.sh:/serviceregistry/wait-for.sh
     ports:
       - 8443:8443
@@ -88,9 +103,9 @@ services:
     depends_on:
       - mysql.uni
     volumes:
-      - ./crypto/uni/system.event_handler.p12:/eventhandler/keystore.p12
-      - ./crypto/uni/truststore.p12:/eventhandler/truststore.p12
-      - ./properties/uni/event_handler.properties:/eventhandler/application.properties
+      - ./config/crypto/uni/system.event_handler.p12:/eventhandler/keystore.p12
+      - ./config/crypto/uni/truststore.p12:/eventhandler/truststore.p12
+      - ./config/properties/uni/event_handler.properties:/eventhandler/application.properties
       - ./scripts/wait-for.sh:/eventhandler/wait-for.sh
     ports:
       - 8455:8455
@@ -105,10 +120,11 @@ services:
     container_name: sys-buyer.uni
     build: sys-buyer
     volumes:
-      - ./crypto/uni/system.buyer.p12:/opt/keystore.p12
-      - ./crypto/uni/truststore.p12:/opt/truststore.p12
+      - ./config/crypto/uni/system.buyer.p12:/opt/keystore.p12
+      - ./config/crypto/uni/truststore.p12:/opt/truststore.p12
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
+      - 8080:8080
       - 9001:9001
     command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sys-seller.uni 9002 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-buyer.jar"]
     networks:
@@ -120,11 +136,11 @@ services:
     image: arrowhead-contract-proxy:latest
     volumes:
       - ./component-order.txt:/opt/component-order.txt
-      - ./crypto/uni/system.contract_proxy_buyer.p12:/opt/keystore.p12
-      - ./crypto/parties/buyer-counter-parties.p12:/opt/counter-parties.p12
-      - ./crypto/parties/buyer-owned-parties.p12:/opt/owned-parties.p12
-      - ./crypto/uni/truststore.p12:/opt/truststore.p12
-      - ./properties/uni/contract_proxy_buyer.properties:/opt/application.properties
+      - ./config/crypto/uni/system.contract_proxy_buyer.p12:/opt/keystore.p12
+      - ./config/crypto/parties/buyer-counter-parties.p12:/opt/counter-parties.p12
+      - ./config/crypto/parties/buyer-owned-parties.p12:/opt/owned-parties.p12
+      - ./config/crypto/uni/truststore.p12:/opt/truststore.p12
+      - ./config/properties/uni/contract_proxy_buyer.properties:/opt/application.properties
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
       - 8901:8901
@@ -139,16 +155,16 @@ services:
     container_name: sys-seller.uni
     build: sys-seller
     volumes:
-      - ./crypto/uni/system.seller.p12:/opt/keystore.seller.p12
-      - ./crypto/uni/system.factory.p12:/opt/keystore.factory.p12
-      - ./crypto/uni/system.middleware.p12:/opt/keystore.middleware.p12
-      - ./crypto/uni/truststore.p12:/opt/truststore.p12
+      - ./config/crypto/uni/system.seller.p12:/opt/keystore.seller.p12
+      - ./config/crypto/uni/system.factory.p12:/opt/keystore.factory.p12
+      - ./config/crypto/uni/system.middleware.p12:/opt/keystore.middleware.p12
+      - ./config/crypto/uni/truststore.p12:/opt/truststore.p12
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
       - 9002:9002
       - 9003:9003
       - 9004:9004
-    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-seller.uni 8902 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-seller.jar"]
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sysop-configurator.uni 9999 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-seller.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.18
@@ -158,11 +174,11 @@ services:
     image: arrowhead-contract-proxy:latest
     volumes:
       - ./component-order.txt:/opt/component-order.txt
-      - ./crypto/uni/system.contract_proxy_seller.p12:/opt/keystore.p12
-      - ./crypto/parties/seller-counter-parties.p12:/opt/counter-parties.p12
-      - ./crypto/parties/seller-owned-parties.p12:/opt/owned-parties.p12
-      - ./crypto/uni/truststore.p12:/opt/truststore.p12
-      - ./properties/uni/contract_proxy_seller.properties:/opt/application.properties
+      - ./config/crypto/uni/system.contract_proxy_seller.p12:/opt/keystore.p12
+      - ./config/crypto/parties/seller-counter-parties.p12:/opt/counter-parties.p12
+      - ./config/crypto/parties/seller-owned-parties.p12:/opt/owned-parties.p12
+      - ./config/crypto/uni/truststore.p12:/opt/truststore.p12
+      - ./config/properties/uni/contract_proxy_seller.properties:/opt/application.properties
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
       - 8902:8902

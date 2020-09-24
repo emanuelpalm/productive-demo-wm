@@ -3,7 +3,7 @@ plugins {
     id 'application'
 }
 
-mainClassName = "${project.group}.shared.Main"
+mainClassName = "${project.group}.sysop.Main"
 
 ext {
     versionArkalix = '0.4.5-SNAPSHOT'

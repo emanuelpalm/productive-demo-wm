@@ -1,0 +1,124 @@
+{
+  "serviceRegistryHost": "service-registry.uni:8443",
+  "providers": [
+    {
+      "address": "sys-buyer.uni",
+      "authenticationInfo": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkYqPtXKpPGN4Z/IKjcE3r6VvLKvF0pG5G7D2q1mSLzPj5JXZwhBuGo4XEwCGPY17A3ORiuc2hEKUYAtUgZHQ06AtLhQ7QehtEEVYTbunz6fTdtp9z3e4/ko4o5DtBD1IeSOzv7eQcZ1eYj/yVWtz1EK3pRaQie7QWdc4pV/oZezosb1stUHmcUS5J0YbFDJRQ1GZifJo8vaN+/fBJw/u1KQhBE5h5x+fnkSCSrIW5SncngTw42+Jj5L2XfR6tZ4auLi3T30lGSEn50zwoYohVFPddYjcg7RqWzUS8RWPGtF6mBKF08ZE+5sYZF2nCpVa5tEc28Z7NoWI9f0SserLBwIDAQAB",
+      "port": 9001,
+      "systemName": "buyer"
+    },
+    {
+      "address": "sys-seller.uni",
+      "authenticationInfo": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlpPsAXI3cHQBpQeYaZKavjPs2esrhcwI1H1QQc4x6zJfcvkTIOb38xvUgEmsRe6m7DEuDPNYAh6NTZTPOzI7gm+1rGp6KP/+5bDB/tpH6FZZkoS3eeFM30ewFm7GTIr/9CIptzXqiGM+X2iOkFea7HXuwfU0zZxrkNtCDldu7v9CssCQNTyVGnRA1cJgFP0A3zJvVFmVqxagwn2KnOwVjqvviQV9/A+n4IbYqhTrsq4ZxsaBHbpzIab6mzUoKSum7KMQc5SBMb/eYJdsg8hpK6455V1A05sXJ7A6rxzWkvfWPCFOEsZ+ZFq5DGktckXsYuzLNNZ1t9blNjO1rpka0wIDAQAB",
+      "port": 9002,
+      "systemName": "seller"
+    }
+  ],
+  "services": [
+    {
+      "serviceDefinition": "event-subscriber",
+      "providerIndex": 0,
+      "serviceUri": "/events/buyer",
+      "secure": "CERTIFICATE",
+      "interfaces": [
+        "HTTP-SECURE-JSON"
+      ]
+    },
+    {
+      "serviceDefinition": "buyer-back-end",
+      "providerIndex": 0,
+      "serviceUri": "/",
+      "secure": "TOKEN",
+      "interfaces": [
+        "HTTP-SECURE-JSON"
+      ]
+    },
+    {
+      "serviceDefinition": "event-subscriber",
+      "providerIndex": 1,
+      "serviceUri": "/events/seller",
+      "secure": "CERTIFICATE",
+      "interfaces": [
+        "HTTP-SECURE-JSON"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "consumer": "buyer",
+      "services": [
+        "event-subscribe",
+        "event-unsubscribe"
+      ],
+      "providers": [
+        "event_handler"
+      ]
+    },
+    {
+      "consumer": "buyer",
+      "services": [
+        "trusted-contract-negotiation",
+        "trusted-contract-observation"
+      ],
+      "providers": [
+        "contract_proxy_buyer"
+      ]
+    },
+    {
+      "consumer": "contract_proxy_buyer",
+      "services": [
+        "contract-negotiation"
+      ],
+      "providers": [
+        "contract_proxy_seller"
+      ]
+    },
+    {
+      "consumer": "contract_proxy_buyer",
+      "services": [
+        "event-publish"
+      ],
+      "providers": [
+        "event_handler"
+      ]
+    },
+    {
+      "consumer": "contract_proxy_seller",
+      "services": [
+        "contract-negotiation"
+      ],
+      "providers": [
+        "contract_proxy_buyer"
+      ]
+    },
+    {
+      "consumer": "contract_proxy_seller",
+      "services": [
+        "event-publish"
+      ],
+      "providers": [
+        "event_handler"
+      ]
+    },
+    {
+      "consumer": "seller",
+      "services": [
+        "event-subscribe",
+        "event-unsubscribe"
+      ],
+      "providers": [
+        "event_handler"
+      ]
+    },
+    {
+      "consumer": "seller",
+      "services": [
+        "trusted-contract-negotiation",
+        "trusted-contract-observation"
+      ],
+      "providers": [
+        "contract_proxy_seller"
+      ]
+    }
+  ]
+}
