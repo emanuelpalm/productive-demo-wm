@@ -42,9 +42,9 @@ public class Offer {
         }
         final var quantity = Integer.parseInt(quantityStr);
 
-        final var articleId = args.get("article-id");
+        final var articleId = args.get("articleId");
         if (articleId == null) {
-            throw new IllegalArgumentException("No `article-id` specified in given contract");
+            throw new IllegalArgumentException("No `articleId` specified in given contract");
         }
         if (!articleId.startsWith("ART-")) {
             throw new IllegalArgumentException("Expected `article-id` to start with `ART-`");
@@ -52,9 +52,9 @@ public class Offer {
         final var drilled = articleId.charAt(4) == 'D';
         final var milled = articleId.charAt(5) == 'M';
 
-        final var unitPriceStr = args.get("unit-price");
+        final var unitPriceStr = args.get("unitPrice");
         if (unitPriceStr == null) {
-            throw new IllegalArgumentException("No `unit-price` specified in given contract");
+            throw new IllegalArgumentException("No `unitPrice` specified in given contract");
         }
         final var unitPrice = Double.parseDouble(unitPriceStr);
 
@@ -104,9 +104,9 @@ public class Offer {
         final var contract = new TrustedContractBuilder()
             .templateName("component-order.txt")
             .arguments(Map.of(
-                "article-id", articleId,
+                "articleId", articleId,
                 "quantity", "" + quantity,
-                "unit-price", "" + pricePerUnit
+                "unitPrice", "" + pricePerUnit
             ))
             .build();
 

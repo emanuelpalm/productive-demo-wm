@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SLEEP_SECONDS=3
+SLEEP_SECONDS=$3
 
 echo "Waiting for $1:$2 ..."
 

@@ -107,9 +107,9 @@ public class Back {
                 final var contract = new TrustedContractBuilder()
                     .templateName("component-order.txt")
                     .arguments(Map.of(
-                        "article-id", articleId,
+                        "articleId", articleId,
                         "quantity", "" + offer.quantity(),
-                        "unit-price", "" + offer.pricePerUnit()
+                        "unitPrice", "" + offer.pricePerUnit()
                     ))
                     .build();
 

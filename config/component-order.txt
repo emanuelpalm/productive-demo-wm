@@ -1,0 +1,3 @@
+The Buyer hereby makes an order for {quantity}
+units of "{articleId}" at the unit price of
+{unitPrice} EUR. [...]

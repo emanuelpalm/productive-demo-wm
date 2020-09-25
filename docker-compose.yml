@@ -39,7 +39,7 @@ services:
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
       - 9999:9999
-    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-seller.uni 8902 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sysop-configurator.jar"]
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-seller.uni 8902 3 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sysop-configurator.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.7
@@ -58,7 +58,7 @@ services:
       - ./scripts/wait-for.sh:/authorization/wait-for.sh
     ports:
       - 8445:8445
-    command: ["/bin/bash", "-c", "cd /authorization && ./wait-for.sh service-registry.uni 8443 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-authorization.jar"]
+    command: ["/bin/bash", "-c", "cd /authorization && ./wait-for.sh service-registry.uni 8443 1 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-authorization.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.10
@@ -75,7 +75,7 @@ services:
       - ./scripts/wait-for.sh:/orchestrator/wait-for.sh
     ports:
       - 8441:8441
-    command: ["/bin/bash", "-c", "cd /orchestrator && ./wait-for.sh authorization.uni 8445 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-orchestrator.jar"]
+    command: ["/bin/bash", "-c", "cd /orchestrator && ./wait-for.sh authorization.uni 8445 1 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-orchestrator.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.14
@@ -92,7 +92,7 @@ services:
       - ./scripts/wait-for.sh:/serviceregistry/wait-for.sh
     ports:
       - 8443:8443
-    command: ["/bin/bash", "-c", "cd /serviceregistry && ./wait-for.sh mysql.uni 3306 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-serviceregistry.jar"]
+    command: ["/bin/bash", "-c", "cd /serviceregistry && ./wait-for.sh mysql.uni 3306 0 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-serviceregistry.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.15
@@ -109,7 +109,7 @@ services:
       - ./scripts/wait-for.sh:/eventhandler/wait-for.sh
     ports:
       - 8455:8455
-    command: ["/bin/bash", "-c", "cd /eventhandler && ./wait-for.sh orchestrator.uni 8441 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-eventhandler.jar"]
+    command: ["/bin/bash", "-c", "cd /eventhandler && ./wait-for.sh orchestrator.uni 8441 1 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar arrowhead-eventhandler.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.11
@@ -126,7 +126,7 @@ services:
     ports:
       - 8080:8080
       - 9001:9001
-    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sys-seller.uni 9002 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-buyer.jar"]
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sys-seller.uni 9002 1 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-buyer.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.16
@@ -135,7 +135,7 @@ services:
     container_name: contract-proxy-buyer.uni
     image: arrowhead-contract-proxy:latest
     volumes:
-      - ./component-order.txt:/opt/component-order.txt
+      - ./config/component-order.txt:/opt/component-order.txt
       - ./config/crypto/uni/system.contract_proxy_buyer.p12:/opt/keystore.p12
       - ./config/crypto/parties/buyer-counter-parties.p12:/opt/counter-parties.p12
       - ./config/crypto/parties/buyer-owned-parties.p12:/opt/owned-parties.p12
@@ -144,7 +144,7 @@ services:
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
       - 8901:8901
-    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh event-handler.uni 8455 && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh event-handler.uni 8455 1 && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.17
@@ -164,7 +164,7 @@ services:
       - 9002:9002
       - 9003:9003
       - 9004:9004
-    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sysop-configurator.uni 9999 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-seller.jar"]
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sysop-configurator.uni 9999 15 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-seller.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.18
@@ -173,7 +173,7 @@ services:
     container_name: contract-proxy-seller.uni
     image: arrowhead-contract-proxy:latest
     volumes:
-      - ./component-order.txt:/opt/component-order.txt
+      - ./config/component-order.txt:/opt/component-order.txt
       - ./config/crypto/uni/system.contract_proxy_seller.p12:/opt/keystore.p12
       - ./config/crypto/parties/seller-counter-parties.p12:/opt/counter-parties.p12
       - ./config/crypto/parties/seller-owned-parties.p12:/opt/owned-parties.p12
@@ -182,7 +182,7 @@ services:
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
       - 8902:8902
-    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-buyer.uni 8901 && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
+    command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh contract-proxy-buyer.uni 8901 3 && java -XX:+UseSerialGC -Xmx1G -Xms32m -Djava.util.logging.config.file=/opt/application.properties -jar arrowhead-contract-proxy.jar"]
     networks:
       uni:
         ipv4_address: 10.1.3.19

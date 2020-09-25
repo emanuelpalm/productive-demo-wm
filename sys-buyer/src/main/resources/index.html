@@ -141,7 +141,7 @@
         }
 
         #offers:not(.error) {
-            grid-template-columns: 2.5rem 4.5rem 4.25rem 5.25rem 9rem auto;
+            grid-template-columns: 2.5rem 4.6rem 4.3rem 5.25rem 9rem auto;
         }
 
         #orders:not(.error) {
@@ -152,7 +152,9 @@
         #orders > div {
             border-bottom: 0.1rem solid #ddd;
             font-family: sans-serif;
+            overflow: hidden;
             padding: 0.25rem;
+            text-overflow: ellipsis;
         }
 
         #offers > div.header,
