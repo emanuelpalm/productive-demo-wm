@@ -263,49 +263,55 @@
                             $h6.innerText = "Status";
                             $offers.appendChild($h6);
 
-                            (offers || []).forEach(function(offer) {
-                                const $id = document.createElement("div");
-                                $id.classList.add("number");
-                                $id.classList.add(offer.status.toLowerCase());
-                                $id.innerText = offer.id;
-                                $offers.appendChild($id);
+                            (offers || [])
+                                .sort(function(a, b) {
+                                    var at = new Date(a.timestamp);
+                                    var bt = new Date(b.timestamp);
+                                    return (at > bt) ? 1 : ((bt > at) ? -1 : 0);
+                                })
+                                .forEach(function(offer) {
+                                    const $id = document.createElement("div");
+                                    $id.classList.add("number");
+                                    $id.classList.add(offer.status.toLowerCase());
+                                    $id.innerText = offer.id;
+                                    $offers.appendChild($id);
 
-                                const $drilled = document.createElement("div");
-                                $drilled.innerText = offer.drilled ? "Yes" : "No";
-                                $drilled.classList.add(offer.status.toLowerCase());
-                                $offers.appendChild($drilled);
+                                    const $drilled = document.createElement("div");
+                                    $drilled.innerText = offer.drilled ? "Yes" : "No";
+                                    $drilled.classList.add(offer.status.toLowerCase());
+                                    $offers.appendChild($drilled);
 
-                                const $milled = document.createElement("div");
-                                $milled.innerText = offer.milled ? "Yes" : "No";
-                                $milled.classList.add(offer.status.toLowerCase());
-                                $offers.appendChild($milled);
+                                    const $milled = document.createElement("div");
+                                    $milled.innerText = offer.milled ? "Yes" : "No";
+                                    $milled.classList.add(offer.status.toLowerCase());
+                                    $offers.appendChild($milled);
 
-                                const $quantity = document.createElement("div");
-                                $quantity.classList.add("number");
-                                $quantity.classList.add(offer.status.toLowerCase());
-                                $quantity.innerText = offer.quantity;
-                                $offers.appendChild($quantity);
+                                    const $quantity = document.createElement("div");
+                                    $quantity.classList.add("number");
+                                    $quantity.classList.add(offer.status.toLowerCase());
+                                    $quantity.innerText = offer.quantity;
+                                    $offers.appendChild($quantity);
 
-                                const $pricePerUnit = document.createElement("div");
-                                $pricePerUnit.innerText = offer.pricePerUnit.toFixed(2);
-                                $pricePerUnit.classList.add("number");
-                                $pricePerUnit.classList.add(offer.status.toLowerCase());
-                                $offers.appendChild($pricePerUnit);
+                                    const $pricePerUnit = document.createElement("div");
+                                    $pricePerUnit.innerText = offer.pricePerUnit.toFixed(2);
+                                    $pricePerUnit.classList.add("number");
+                                    $pricePerUnit.classList.add(offer.status.toLowerCase());
+                                    $offers.appendChild($pricePerUnit);
 
-                                const $status = document.createElement("div");
-                                $status.innerText = offer.status;
-                                $status.classList.add("status");
-                                $status.classList.add(offer.status.toLowerCase());
-                                if (offer.status.toUpperCase() === "COUNTERED") {
-                                    $status.addEventListener("click", function(event) {
-                                        event.preventDefault();
-                                        savedOfferFormData = getOfferFormData();
-                                        setOfferFormData(offer.counterOffer);
-                                        $offerForm.classList.add("counter-offer");
-                                    });
-                                }
-                                $offers.appendChild($status);
-                            });
+                                    const $status = document.createElement("div");
+                                    $status.innerText = offer.status;
+                                    $status.classList.add("status");
+                                    $status.classList.add(offer.status.toLowerCase());
+                                    if (offer.status.toUpperCase() === "COUNTERED") {
+                                        $status.addEventListener("click", function(event) {
+                                            event.preventDefault();
+                                            savedOfferFormData = getOfferFormData();
+                                            setOfferFormData(offer.counterOffer);
+                                            $offerForm.classList.add("counter-offer");
+                                        });
+                                    }
+                                    $offers.appendChild($status);
+                                });
                         })
                         .catch(function(error) {
                             console.log(error);
@@ -424,7 +430,10 @@
                 }
                 const value = data[name];
                 if ((typeof value === "string" && value.trim().length > 0) || (value !== undefined && value !== NaN)) {
-                    if ($element.value !== undefined) {
+                    if (typeof $element.value === "number") {
+                        $element.value = value.toFixed(2);
+                    }
+                    else if ($element.value !== undefined) {
                         $element.value = value;
                     }
                     else {

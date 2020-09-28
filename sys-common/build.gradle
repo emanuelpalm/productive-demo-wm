@@ -1,19 +1,13 @@
 plugins {
-    id 'com.github.johnrengelman.shadow' version '6.0.0'
-    id 'application'
+    id 'java-library'
 }
-
-mainClassName = "${project.group}.shared.Main"
 
 ext {
     versionArkalix = '0.4.5-SNAPSHOT'
-    versionSlf4j = '1.7.30'
 }
 
 dependencies {
-    implementation project(':sys-common')
     implementation "se.arkalix:kalix-base:$versionArkalix"
     implementation "se.arkalix:kalix-core-plugins:$versionArkalix"
     annotationProcessor "se.arkalix:kalix-processors:$versionArkalix"
-    implementation "org.slf4j:slf4j-jdk14:$versionSlf4j"
 }

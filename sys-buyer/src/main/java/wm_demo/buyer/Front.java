@@ -6,6 +6,9 @@ import se.arkalix.ArSystem;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.net.http.service.HttpService;
 import se.arkalix.util.concurrent.Future;
+import wm_demo.common.DataOfferDto;
+import wm_demo.common.DataOfferWithContextDto;
+import wm_demo.common.DataOrderDto;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -23,7 +26,7 @@ public class Front {
         try {
             final var bytes = Objects.requireNonNull(Front.class
                 .getClassLoader()
-                .getResourceAsStream("index.html"))
+                .getResourceAsStream("front.html"))
                 .readAllBytes();
 
             HTML = new String(bytes, StandardCharsets.UTF_8);
@@ -79,7 +82,7 @@ public class Front {
                     })
 
                     .post("/offers", (request, response) -> request
-                        .bodyAs(DataOfferNewDto.class)
+                        .bodyAs(DataOfferDto.class)
                         .flatMap(handler::onOffer)
                         .ifSuccess(ignored -> response.status(OK))))
 
@@ -95,10 +98,10 @@ public class Front {
     }
 
     public interface RequestHandler {
-        DataOfferDto[] onGetOffers();
+        DataOfferWithContextDto[] onGetOffers();
 
         DataOrderDto[] onGetOrders();
 
-        Future<?> onOffer(final DataOfferNewDto offer);
+        Future<?> onOffer(final DataOfferDto offer);
     }
 }

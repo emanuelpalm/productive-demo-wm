@@ -8,6 +8,7 @@ import se.arkalix.core.plugin.cp.*;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.concurrent.Future;
+import wm_demo.common.DataOffer;
 import wm_demo.shared.Global;
 
 import java.net.InetSocketAddress;
@@ -17,7 +18,7 @@ public class Seller {
 
     private final ArSystem system;
 
-    public Seller(final ArSystem system) {
+    private Seller(final ArSystem system) {
         this.system = system;
     }
 
@@ -53,11 +54,11 @@ public class Seller {
                             @Override
                             public void onOffer(final TrustedContractNegotiationDto negotiation, final TrustedContractNegotiatorResponder responder) {
                                 try {
-                                    final var offer = Offer.fromNegotiation(negotiation);
+                                    final var offer= DataOffer.fromContract(negotiation.offer().contracts().get(0));
                                     final var counterOffer = pricingModel.getCounterOfferIfNotAcceptable(offer);
                                     if (counterOffer.isPresent()) {
                                         responder
-                                            .offer(counterOffer.get().toCounterOffer())
+                                            .offer(counterOffer.get().toSimplifiedContractCounterOffer())
                                             .onFailure(throwable -> logger.error("Failed to make counter-offer", throwable));
                                     }
                                     else {

@@ -11,6 +11,7 @@ ext {
 }
 
 dependencies {
+    implementation project(':sys-common')
     implementation "se.arkalix:kalix-base:$versionArkalix"
     implementation "se.arkalix:kalix-core-plugins:$versionArkalix"
     annotationProcessor "se.arkalix:kalix-processors:$versionArkalix"

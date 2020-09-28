@@ -2,6 +2,7 @@ package wm_demo.shared;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import wm_demo.middleware.Middleware;
 import wm_demo.seller.PricingModel;
 import wm_demo.seller.Seller;
 
@@ -24,9 +25,14 @@ public class Main {
 
         try {
             final var seller = Seller.createBindToPortAndUse(9002, sellerPricingModel)
-                .ifFailure(Throwable.class, throwable -> logger.error("Failed to setup application back-end", throwable))
+                .ifFailure(Throwable.class, throwable -> logger.error("Failed to setup seller system", throwable))
                 .await();
             logger.info("Seller now available via port " + seller.port());
+
+            final var middleware = Middleware.createAndBindTo(9003)
+                .ifFailure(Throwable.class, throwable -> logger.error("Failed to setup middleware system", throwable))
+                .await();
+            logger.info("Middleware now available via port " + middleware.port());
         }
         catch (final Throwable throwable) {
             logger.error("Application start-up failed", throwable);

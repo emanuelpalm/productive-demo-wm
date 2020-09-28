@@ -1,5 +1,7 @@
 package wm_demo.seller;
 
+import wm_demo.common.DataOffer;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -20,10 +22,9 @@ public class PricingModel {
         milledPriceMultiplier = Objects.requireNonNullElse(builder.milledPriceMultiplier, 1.0);
     }
 
-    public Optional<Offer> getCounterOfferIfNotAcceptable(final Offer offer) {
+    public Optional<DataOffer> getCounterOfferIfNotAcceptable(final DataOffer offer) {
         final var quantity = Math.min(quantityMax, Math.max(quantityMin, offer.quantity()));
-        final var ppu = quantity
-            * quantityPriceMultiplier
+        final var ppu = Math.pow(quantityPriceMultiplier, quantity)
             * minUnitPrice
             * (offer.drilled() ? drilledPriceMultiplier : 1.0)
             * (offer.milled() ? milledPriceMultiplier : 1.0);

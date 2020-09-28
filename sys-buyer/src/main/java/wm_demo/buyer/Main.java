@@ -25,7 +25,7 @@ public class Main {
     }
 
     static {
-        final var logLevel = Level.ALL;
+        final var logLevel = Level.INFO;
         System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT %4$s %5$s%6$s%n");
         final var root = java.util.logging.Logger.getLogger("");
         root.setLevel(logLevel);

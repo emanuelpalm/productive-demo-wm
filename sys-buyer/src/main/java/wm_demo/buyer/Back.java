@@ -9,9 +9,11 @@ import se.arkalix.net.http.service.HttpService;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.concurrent.Future;
+import wm_demo.common.*;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +29,7 @@ public class Back {
     private final ArSystem system;
     private final ArTrustedContractNegotiatorPluginFacade facade;
 
-    private final Map<Long, DataOfferDto> offers = new ConcurrentHashMap<>();
+    private final Map<Long, DataOfferWithContextDto> offers = new ConcurrentHashMap<>();
     private final Map<String, DataOrderDto> orders = new ConcurrentHashMap<>();
     private final Map<Long, CounterOffer> pendingCounterOffers = new ConcurrentHashMap<>();
 
@@ -89,8 +91,8 @@ public class Back {
     public Front.RequestHandler handler() {
         return new Front.RequestHandler() {
             @Override
-            public DataOfferDto[] onGetOffers() {
-                return offers.values().toArray(new DataOfferDto[0]);
+            public DataOfferWithContextDto[] onGetOffers() {
+                return offers.values().toArray(new DataOfferWithContextDto[0]);
             }
 
             @Override
@@ -99,7 +101,7 @@ public class Back {
             }
 
             @Override
-            public Future<?> onOffer(final DataOfferNewDto offer) {
+            public Future<?> onOffer(final DataOfferDto offer) {
                 final var articleId = "ART-" +
                     (offer.drilled() ? "D" : "P") +
                     (offer.milled() ? "M" : "P");
@@ -134,7 +136,7 @@ public class Back {
                         @Override
                         public void onAccept(final TrustedContractNegotiationDto negotiation) {
                             offers.computeIfPresent(negotiation.id(), (id, offer) -> offer.rebuild()
-                                .status(DataOffer.Status.ACCEPTED)
+                                .status(DataOfferStatus.ACCEPTED)
                                 .build());
                             orders.compute(articleId, (articleId, order) -> {
                                 if (order == null) {
@@ -154,49 +156,53 @@ public class Back {
                         @Override
                         public void onOffer(final TrustedContractNegotiationDto negotiation, final TrustedContractNegotiatorResponder responder) {
                             final var contracts = negotiation.offer().contracts();
-                            if (contracts.size() != 0) {
+                            if (contracts.size() != 1) {
                                 throw new IllegalArgumentException("Negotiation offer must contain exactly one contract");
                             }
-                            pendingCounterOffers.put(negotiation.id(), new CounterOffer(
-                                negotiation.offer()
-                                    .contracts()
-                                    .get(0),
-                                responder
-                            ));
+                            final var contract = negotiation.offer().contracts().get(0);
+                            pendingCounterOffers.put(negotiation.id(), new CounterOffer(contract, responder));
                             offers.computeIfPresent(negotiation.id(), (id, offer) -> offer.rebuild()
-                                .status(DataOffer.Status.COUNTERED)
+                                .status(DataOfferStatus.COUNTERED)
+                                .counterOffer(DataOffer.fromContract(contract))
                                 .build());
                         }
 
                         @Override
                         public void onReject(final TrustedContractNegotiationDto negotiation) {
                             offers.computeIfPresent(negotiation.id(), (id, offer) -> offer.rebuild()
-                                .status(DataOffer.Status.REJECTED)
+                                .status(DataOfferStatus.REJECTED)
                                 .build());
                         }
 
                         @Override
                         public void onExpiry(final long negotiationId) {
-                            offers.computeIfPresent(negotiationId, (id, offer) -> offer.rebuild()
-                                .status(DataOffer.Status.EXPIRED)
-                                .build());
+                            offers.computeIfPresent(negotiationId, (id, offer) -> {
+                                final var status = offer.status();
+                                if (status != DataOfferStatus.ACCEPTED && status != DataOfferStatus.REJECTED) {
+                                    offer = offer.rebuild()
+                                        .status(DataOfferStatus.EXPIRED)
+                                        .build();
+                                }
+                                return offer;
+                            });
                         }
 
                         @Override
                         public void onFault(final long negotiationId, final Throwable throwable) {
                             logger.error("Failed to handle contract offer", throwable);
                             offers.computeIfPresent(negotiationId, (id, offer) -> offer.rebuild()
-                                .status(DataOffer.Status.FAILED)
+                                .status(DataOfferStatus.FAILED)
                                 .build());
                         }
                     })
-                    .ifSuccess(negotiationId -> offers.put(negotiationId, new DataOfferBuilder()
+                    .ifSuccess(negotiationId -> offers.put(negotiationId, new DataOfferWithContextBuilder()
                         .id(negotiationId)
+                        .timestamp(Instant.now())
                         .drilled(offer.drilled())
                         .milled(offer.milled())
                         .quantity(offer.quantity())
                         .pricePerUnit(offer.pricePerUnit())
-                        .status(DataOffer.Status.PENDING)
+                        .status(DataOfferStatus.PENDING)
                         .build()));
             }
         };

@@ -1,1 +1,1 @@
-include ':sys-buyer', ':sys-seller', ':sysop-configurator'
+include ':sys-buyer', ':sys-common', ':sys-seller', ':sysop-configurator'
