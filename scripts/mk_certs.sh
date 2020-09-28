@@ -72,19 +72,18 @@ create_seller_system_keystore "service_registry"  "ip:10.1.2.15,dns:service-regi
 
 create_seller_system_keystore "contract_proxy"    "ip:10.1.2.16,dns:contract-proxy.seller,dns:localhost,ip:127.0.0.1"
 create_seller_system_keystore "middleware"        "ip:10.1.2.17,dns:middleware.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "factory"           "ip:10.1.2.18,dns:factory.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "seller"            "ip:10.1.2.19,dns:sys-seller.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "workflow_manager"  "ip:10.1.2.20,dns:workflow-manager.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "workflow_executor" "ip:10.1.2.21,dns:workflow-executor.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "seller"            "ip:10.1.2.18,dns:sys-seller.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "workflow_manager"  "ip:10.1.2.19,dns:workflow-manager.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "workflow_executor" "ip:10.1.2.20,dns:workflow-executor.seller,dns:localhost,ip:127.0.0.1"
 
-create_seller_system_keystore "product1"          "ip:10.2.2.10,dns:product1.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "product2"          "ip:10.2.2.11,dns:product2.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "product3"          "ip:10.2.2.12,dns:product3.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "product4"          "ip:10.2.2.13,dns:product4.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "product5"          "ip:10.2.2.14,dns:product5.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "product6"          "ip:10.2.2.15,dns:product6.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "product7"          "ip:10.2.2.16,dns:product7.seller,dns:localhost,ip:127.0.0.1"
-create_seller_system_keystore "product8"          "ip:10.2.2.17,dns:product8.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "product1"          "ip:10.1.2.101,dns:product1.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "product2"          "ip:10.1.2.102,dns:product2.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "product3"          "ip:10.1.2.103,dns:product3.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "product4"          "ip:10.1.2.104,dns:product4.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "product5"          "ip:10.1.2.105,dns:product5.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "product6"          "ip:10.1.2.106,dns:product6.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "product7"          "ip:10.1.2.107,dns:product7.seller,dns:localhost,ip:127.0.0.1"
+create_seller_system_keystore "product8"          "ip:10.1.2.108,dns:product8.seller,dns:localhost,ip:127.0.0.1"
 
 create_sysop_keystore \
   "config/crypto/arrowhead.p12" "arrowhead.eu" \
@@ -119,10 +118,11 @@ create_uni_system_keystore "orchestrator"          "ip:10.1.3.14,dns:orchestrato
 create_uni_system_keystore "service_registry"      "ip:10.1.3.15,dns:service-registry.uni,dns:localhost,ip:127.0.0.1"
 
 create_uni_system_keystore "buyer"                 "ip:10.1.3.16,dns:sys-buyer.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "buyer_operator"        ""
 create_uni_system_keystore "contract_proxy_buyer"  "ip:10.1.3.17,dns:contract-proxy-buyer.uni,dns:localhost,ip:127.0.0.1"
 
-create_uni_system_keystore "factory"               "ip:10.1.3.18,dns:factory.uni,dns:localhost,ip:127.0.0.1"
 create_uni_system_keystore "middleware"            "ip:10.1.3.18,dns:middleware.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "middleware_operator"   ""
 create_uni_system_keystore "seller"                "ip:10.1.3.18,dns:sys-seller.uni,dns:localhost,ip:127.0.0.1"
 create_uni_system_keystore "contract_proxy_seller" "ip:10.1.3.19,dns:contract-proxy-seller.uni,dns:localhost,ip:127.0.0.1"
 

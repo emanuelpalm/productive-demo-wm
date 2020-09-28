@@ -7,7 +7,6 @@ import se.arkalix.core.plugin.HttpJsonCloudPlugin;
 import se.arkalix.core.plugin.cp.*;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.TrustStore;
-import se.arkalix.util.concurrent.Future;
 import wm_demo.common.DataOffer;
 import wm_demo.shared.Global;
 
@@ -15,81 +14,80 @@ import java.net.InetSocketAddress;
 
 public class Seller {
     private static final Logger logger = LoggerFactory.getLogger(Seller.class);
+    private static final PricingModel pricingModel = new PricingModel.Builder()
+        .quantityMin(1)
+        .quantityMax(3)
+        .minUnitPrice(100.0)
+        .drilledPriceMultiplier(1.05)
+        .milledPriceMultiplier(1.15)
+        .quantityPriceMultiplier(0.99)
+        .build();
 
-    private final ArSystem system;
+    private Seller() {}
 
-    private Seller(final ArSystem system) {
-        this.system = system;
-    }
-
-    public static Future<Seller> createBindToPortAndUse(final int port, final PricingModel pricingModel) {
+    public static void main(final String[] args) {
+        logger.info("Productive 4.0 Workflow Manager Demonstrator - Seller System");
         try {
             final var password = new char[]{'1', '2', '3', '4', '5', '6'};
-            return new ArSystem.Builder()
+            final var system = new ArSystem.Builder()
                 .identity(new OwnedIdentity.Loader()
-                    .keyStorePath(Global.KEYSTORE_SELLER)
+                    .keyStorePath(Global.SELLER_KEYSTORE)
                     .keyStorePassword(password)
                     .keyPassword(password)
                     .load())
                 .trustStore(TrustStore.read(Global.TRUSTSTORE, password))
-                .localHostnamePort(Global.HOSTNAME_LOCAL, port)
+                .localHostnamePort(Global.SELLER_HOSTNAME, Global.SELLER_PORT)
                 .plugins(
-                    HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress(Global.HOSTNAME_SR, Global.PORT_SR)),
+                    HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress(Global.SR_HOSTNAME, Global.SR_PORT)),
                     new HttpJsonTrustedContractNegotiatorPlugin())
-                .buildAsync()
-                .map(system -> {
-                    system
-                        .pluginFacadeOf(HttpJsonTrustedContractNegotiatorPlugin.class)
-                        .map(f -> (ArTrustedContractNegotiatorPluginFacade) f)
-                        .orElseThrow(() -> new IllegalStateException("No " +
-                            "HttpJsonTrustedContractNegotiatorPlugin is " +
-                            "available; cannot negotiate"))
-                        .listen("Seller", () -> new TrustedContractNegotiatorHandler() {
-                            @Override
-                            public void onAccept(final TrustedContractNegotiationDto negotiation) {
-                                logger.info("Counter-offer accepted " + negotiation.offer());
-                                // TODO: Notify factory.
-                            }
+                .build();
 
-                            @Override
-                            public void onOffer(final TrustedContractNegotiationDto negotiation, final TrustedContractNegotiatorResponder responder) {
-                                try {
-                                    final var offer= DataOffer.fromContract(negotiation.offer().contracts().get(0));
-                                    final var counterOffer = pricingModel.getCounterOfferIfNotAcceptable(offer);
-                                    if (counterOffer.isPresent()) {
-                                        responder
-                                            .offer(counterOffer.get().toSimplifiedContractCounterOffer())
-                                            .onFailure(throwable -> logger.error("Failed to make counter-offer", throwable));
-                                    }
-                                    else {
-                                        responder
-                                            .accept()
-                                            .onFailure(throwable -> logger.error("Failed to accept offer", throwable));
-                                        // TODO: Notify factory.
-                                    }
-                                }
-                                catch (final IllegalArgumentException exception) {
-                                    logger.warn("Rejecting bad offer " + negotiation.offer(), exception);
-                                    responder
-                                        .reject()
-                                        .onFailure(throwable -> logger.error("Failed to reject offer", throwable));
-                                }
-                            }
+            system
+                .pluginFacadeOf(HttpJsonTrustedContractNegotiatorPlugin.class)
+                .map(f -> (ArTrustedContractNegotiatorPluginFacade) f)
+                .orElseThrow(() -> new IllegalStateException("No " +
+                    "HttpJsonTrustedContractNegotiatorPlugin is " +
+                    "available; cannot negotiate"))
+                .listen("Seller", () -> new TrustedContractNegotiatorHandler() {
+                    @Override
+                    public void onAccept(final TrustedContractNegotiationDto negotiation) {
+                        logger.info("Counter-offer accepted " + negotiation.offer());
+                        // TODO: Notify middleware.
+                    }
 
-                            @Override
-                            public void onReject(final TrustedContractNegotiationDto negotiation) {
-                                logger.info("Counter-offer rejected " + negotiation.offer());
+                    @Override
+                    public void onOffer(final TrustedContractNegotiationDto negotiation, final TrustedContractNegotiatorResponder responder) {
+                        try {
+                            final var offer = DataOffer.fromContract(negotiation.offer().contracts().get(0));
+                            final var counterOffer = pricingModel.getCounterOfferIfNotAcceptable(offer);
+                            if (counterOffer.isPresent()) {
+                                responder
+                                    .offer(counterOffer.get().toSimplifiedContractCounterOffer())
+                                    .onFailure(throwable -> logger.error("Failed to make counter-offer", throwable));
                             }
-                        });
-                    return new Seller(system);
+                            else {
+                                responder
+                                    .accept()
+                                    .onFailure(throwable -> logger.error("Failed to accept offer", throwable));
+                                // TODO: Notify middleware.
+                            }
+                        }
+                        catch (final IllegalArgumentException exception) {
+                            logger.warn("Rejecting bad offer " + negotiation.offer(), exception);
+                            responder
+                                .reject()
+                                .onFailure(throwable -> logger.error("Failed to reject offer", throwable));
+                        }
+                    }
+
+                    @Override
+                    public void onReject(final TrustedContractNegotiationDto negotiation) {
+                        logger.info("Counter-offer rejected " + negotiation.offer());
+                    }
                 });
         }
         catch (final Throwable throwable) {
-            return Future.failure(throwable);
+            logger.error("Seller system start-up failed", throwable);
         }
-    }
-
-    public int port() {
-        return system.localPort();
     }
 }

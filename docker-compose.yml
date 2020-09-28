@@ -163,10 +163,11 @@ services:
     ports:
       - 9002:9002
       - 9003:9003
-      - 9004:9004
     command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sysop-configurator.uni 9999 15 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-seller.jar"]
     networks:
       uni:
+        aliases:
+          - sys-middleware.uni
         ipv4_address: 10.1.3.18
 
   contract-proxy-seller.uni:

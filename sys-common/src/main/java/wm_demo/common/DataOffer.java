@@ -3,6 +3,7 @@ package wm_demo.common;
 import se.arkalix.core.plugin.cp.SimplifiedContractCounterOffer;
 import se.arkalix.core.plugin.cp.TrustedContract;
 import se.arkalix.core.plugin.cp.TrustedContractBuilder;
+import se.arkalix.core.plugin.cp.TrustedContractDto;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
@@ -36,23 +37,25 @@ public interface DataOffer {
             .pricePerUnit(pricePerUnit());
     }
 
-    default SimplifiedContractCounterOffer toSimplifiedContractCounterOffer() {
-        final var articleId = "ART-" +
-            (drilled() ? "D" : "P") +
-            (milled() ? "M" : "P");
+    default String articleId() {
+        return "ART-" + (drilled() ? "D" : "P") + (milled() ? "M" : "P");
+    }
 
-        final var contract = new TrustedContractBuilder()
+    default TrustedContractDto toContract() {
+        return new TrustedContractBuilder()
             .templateName("component-order.txt")
             .arguments(Map.of(
-                "articleId", articleId,
+                "articleId", articleId(),
                 "quantity", "" + quantity(),
                 "unitPrice", "" + pricePerUnit()
             ))
             .build();
+    }
 
+    default SimplifiedContractCounterOffer toSimplifiedContractCounterOffer() {
         return new SimplifiedContractCounterOffer.Builder()
             .validFor(Duration.ofMinutes(3))
-            .contracts(contract)
+            .contracts(toContract())
             .build();
     }
 
