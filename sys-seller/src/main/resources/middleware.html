@@ -2,9 +2,265 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Workflow Demo - Pending Orders</title>
+    <style>
+        html {
+            color: #333;
+        }
+
+        body {
+            align-items: start;
+            background-color: #eee;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        body > section:not(:last-child) {
+            margin-right: 1rem;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            margin: 0 0 1rem 0;
+        }
+
+        #status {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.2rem 0.1rem #00000020;
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 0.8rem;
+            display: none;
+            margin-top: 1rem;
+            min-height: 4rem;
+            padding: 1rem;
+            text-align: justify;
+            width: 20rem;
+        }
+
+        #status.error {
+            background-color: #96232D;
+            display: block;
+        }
+
+        #status.info {
+            background-color: #565E96;
+            display: block;
+        }
+
+        #status.ok {
+            background-color: #23963E;
+            display: block;
+        }
+
+        #status.warning {
+            background-color: #968341;
+            display: block;
+        }
+
+        .orders {
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.2rem 0.1rem #00000020;
+            display: flex;
+            flex-direction: column;
+            margin: 1rem 0;
+            min-height: 27rem;
+            padding: 1rem;
+        }
+
+        .orders {
+            width: 34rem;
+        }
+
+        #orders.error {
+            color: #96232D;
+            font-family: sans-serif;
+            font-size: 0.8rem;
+        }
+
+        #orders:not(.error) {
+            column-gap: 0.25rem;
+            display: grid;
+            row-gap: 0.25rem;
+        }
+
+        #orders:not(.error) {
+            grid-template-columns: 12rem auto;
+        }
+
+        #orders > div {
+            border-bottom: 0.1rem solid #ddd;
+            font-family: sans-serif;
+            overflow: hidden;
+            padding: 0.25rem;
+            text-overflow: ellipsis;
+        }
+
+        #orders > div.header {
+            border-bottom: 0.15rem solid #ccc;
+            font-family: inherit;
+        }
+
+        #orders > div.number {
+            text-align: right;
+        }
+    </style>
+    <script>
+        window.onload = function() {
+            let orderPoller;
+            const $orders = document.getElementById("orders");
+            const pollForOrders = function() {
+                const poll = function() {
+                     getJson("/orders")
+                        .then(function(orders) {
+                            $orders.classList.remove("error");
+                            $orders.innerText = "";
+
+                            const $h1 = document.createElement("div");
+                            $h1.className = "header";
+                            $h1.innerText = "Serial ID";
+                            $orders.appendChild($h1);
+
+                            const $h2 = document.createElement("div");
+                            $h2.className = "header";
+                            $h2.innerText = "Article ID";
+                            $orders.appendChild($h2);
+
+                            (orders || [])
+                                .sort(function(a, b) {
+                                    return a.serialId - b.serialId;
+                                })
+                                .forEach(function(order) {
+                                    const $serialId = document.createElement("div");
+                                    $serialId.classList.add("number");
+                                    $serialId.innerText = order.serialId;
+                                    $orders.appendChild($serialId);
+
+                                    const $articleId = document.createElement("div");
+                                    $articleId.innerText = order.articleId;
+                                    $orders.appendChild($articleId);
+                                });
+                        })
+                        .catch(function(error) {
+                            console.log(error);
+                            $orders.classList.add("error");
+                            $orders.innerText = "Failed to retrieve pending manufacturing orders. Trying again in 10 seconds ...";
+                            window.clearInterval(orderPoller);
+                            window.setTimeout(pollForOrders, 10000);
+                        });
+                };
+                poll();
+                orderPoller = window.setInterval(poll, 2000);
+            };
+            pollForOrders();
+        };
+
+        function statusOk(message) { status("ok", message); }
+        function statusWarning(message) { status("warning", message); }
+        function statusError(message) { status("error", message); }
+        function statusInfo(message) { status("info", message); }
+
+        function status(type, message) {
+            console.log(type + ": " + message);
+            const $status = document.getElementById("status");
+            $status.className = type;
+            $status.innerText = message;
+        }
+
+        function getJson(url, headers) {
+            return requestJson("GET", url, headers || {}, undefined);
+        }
+
+        function postJson(url, headers, payload) {
+            if (typeof payload === "undefined") {
+                payload = headers;
+                headers = {};
+            }
+            return requestJson("POST", url, headers || {}, payload);
+        }
+
+        function requestJson(method, url, headers, payload) {
+            if (!headers) {
+                headers = {accept: "application/json"};
+            }
+            else if (!headers.accept) {
+                 headers.accept = "application/json";
+            }
+            if (payload && typeof payload === "object") {
+                payload = JSON.stringify(payload);
+            }
+            if (payload) {
+                headers["content-type"] = "application/json";
+            }
+            return request(method, url, headers, payload)
+                .then(function (xhr) {
+                    if (typeof xhr.responseText === "undefined" || xhr.responseText.length === 0) {
+                        return null;
+                    }
+                    const contentType = (xhr.getResponseHeader("content-type") || "").trim().toLowerCase();
+                    if (!contentType.startsWith("application/json")) {
+                        throw {
+                            "name": "badResponseType",
+                            "message": "Expected JSON-formatted response from server; received `" + contentType + "`.",
+                            "data": xhr
+                        };
+                    }
+                    return JSON.parse(xhr.responseText);
+                });
+        }
+
+        function request(method, url, headers, payload) {
+            return new Promise(function(resolve, reject) {
+                const xhr = new XMLHttpRequest();
+                xhr.timeout = 3000; // 3 seconds.
+                xhr.open(method, url);
+                xhr.addEventListener("load", function() {
+                    if (this.status >= 200 && this.status <= 299) {
+                        resolve(this);
+                    }
+                    else {
+                        reject({
+                            "name": "badResponseStatus",
+                            "message": "An unexpected status code was received from server (" + this.status + ").",
+                            "data": this
+                        });
+                    }
+                });
+                xhr.addEventListener("error", function() {
+                    reject({
+                        "name": "error",
+                        "message": "Failed to send request to server.",
+                        "data": this
+                    });
+                });
+                xhr.addEventListener("timeout", function() {
+                    reject({
+                        "name": "timeout",
+                        "message": "Server failed to respond to sent request within " + (xhr.timeout / 1000.0) +
+                            " seconds.",
+                        "data": this
+                    });
+                });
+                for (const [key, value] of Object.entries(headers)) {
+                    xhr.setRequestHeader(key, value.toString());
+                }
+                xhr.send(payload);
+            });
+        }
+    </script>
 </head>
 <body>
-
+    <section id="status" class="info">
+        Pending manufacturing orders are listed to the right. Each new order is to have its serial ID associated with a
+        piece that is placed on the assembly line. Completed orders are removed automatically from the list.
+    </section>
+    <section class="orders">
+        <h1>In-Progress Orders</h1>
+        <div id="orders"></div>
+    </section>
 </body>
 </html>

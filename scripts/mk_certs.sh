@@ -118,11 +118,11 @@ create_uni_system_keystore "orchestrator"          "ip:10.1.3.14,dns:orchestrato
 create_uni_system_keystore "service_registry"      "ip:10.1.3.15,dns:service-registry.uni,dns:localhost,ip:127.0.0.1"
 
 create_uni_system_keystore "buyer"                 "ip:10.1.3.16,dns:sys-buyer.uni,dns:localhost,ip:127.0.0.1"
-create_uni_system_keystore "buyer_operator"        ""
+create_uni_system_keystore "buyer_operator"        "dns:localhost,ip:127.0.0.1"
 create_uni_system_keystore "contract_proxy_buyer"  "ip:10.1.3.17,dns:contract-proxy-buyer.uni,dns:localhost,ip:127.0.0.1"
 
-create_uni_system_keystore "middleware"            "ip:10.1.3.18,dns:middleware.uni,dns:localhost,ip:127.0.0.1"
-create_uni_system_keystore "middleware_operator"   ""
+create_uni_system_keystore "middleware"            "ip:10.1.3.18,dns:sys-middleware.uni,dns:localhost,ip:127.0.0.1"
+create_uni_system_keystore "middleware_operator"   "dns:localhost,ip:127.0.0.1"
 create_uni_system_keystore "seller"                "ip:10.1.3.18,dns:sys-seller.uni,dns:localhost,ip:127.0.0.1"
 create_uni_system_keystore "contract_proxy_seller" "ip:10.1.3.19,dns:contract-proxy-seller.uni,dns:localhost,ip:127.0.0.1"
 

@@ -8,7 +8,7 @@ import se.arkalix.core.plugin.cp.*;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.TrustStore;
 import wm_demo.common.DataOffer;
-import wm_demo.shared.Global;
+import wm_demo.common.Config;
 
 import java.net.InetSocketAddress;
 
@@ -31,14 +31,14 @@ public class Seller {
             final var password = new char[]{'1', '2', '3', '4', '5', '6'};
             final var system = new ArSystem.Builder()
                 .identity(new OwnedIdentity.Loader()
-                    .keyStorePath(Global.SELLER_KEYSTORE)
+                    .keyStorePath("keystore.seller.p12")
                     .keyStorePassword(password)
                     .keyPassword(password)
                     .load())
-                .trustStore(TrustStore.read(Global.TRUSTSTORE, password))
-                .localHostnamePort(Global.SELLER_HOSTNAME, Global.SELLER_PORT)
+                .trustStore(TrustStore.read("truststore.p12", password))
+                .localHostnamePort(Config.SELLER_HOSTNAME, Config.SELLER_PORT)
                 .plugins(
-                    HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress(Global.SR_HOSTNAME, Global.SR_PORT)),
+                    HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress(Config.SR_HOSTNAME, Config.SR_PORT)),
                     new HttpJsonTrustedContractNegotiatorPlugin())
                 .build();
 
@@ -52,7 +52,6 @@ public class Seller {
                     @Override
                     public void onAccept(final TrustedContractNegotiationDto negotiation) {
                         logger.info("Counter-offer accepted " + negotiation.offer());
-                        // TODO: Notify middleware.
                     }
 
                     @Override
@@ -69,7 +68,6 @@ public class Seller {
                                 responder
                                     .accept()
                                     .onFailure(throwable -> logger.error("Failed to accept offer", throwable));
-                                // TODO: Notify middleware.
                             }
                         }
                         catch (final IllegalArgumentException exception) {

@@ -26,8 +26,8 @@ import java.util.logging.Level;
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 import static se.arkalix.net.http.HttpStatus.CREATED;
 import static se.arkalix.net.http.HttpStatus.OK;
+import static se.arkalix.security.access.AccessPolicy.cloud;
 import static se.arkalix.security.access.AccessPolicy.token;
-import static se.arkalix.security.access.AccessPolicy.whitelist;
 import static se.arkalix.util.concurrent.Future.done;
 
 public class Main {
@@ -35,7 +35,7 @@ public class Main {
     private static final String HTML;
 
     private static final Map<Long, DataOfferWithContextDto> offers = new ConcurrentHashMap<>();
-    private static final Map<String, DataOrderDto> orders = new ConcurrentHashMap<>();
+    private static final Map<String, DataOrderSummaryDto> orderSummaries = new ConcurrentHashMap<>();
     private static final Map<Long, PendingCounterOffer> pendingCounterOffers = new ConcurrentHashMap<>();
 
     public static void main(final String[] args) {
@@ -49,9 +49,14 @@ public class Main {
                     .keyPassword(password)
                     .load())
                 .trustStore(TrustStore.read("truststore.p12", password))
-                .localHostnamePort("sys-buyer.uni", 9001)
+                .localHostnamePort(Config.BUYER_HOSTNAME, Config.BUYER_PORT)
                 .plugins(
-                    HttpJsonCloudPlugin.joinViaServiceRegistryAt(new InetSocketAddress("service-registry.uni", 8443)),
+                    new HttpJsonCloudPlugin.Builder()
+                        .serviceRegistrationPredicate(service -> service.interfaces()
+                            .stream()
+                            .allMatch(i -> i.encoding().isDtoEncoding()))
+                        .serviceRegistrySocketAddress(new InetSocketAddress(Config.SR_HOSTNAME, Config.SR_PORT))
+                        .build(),
                     new HttpJsonTrustedContractNegotiatorPlugin())
                 .build();
 
@@ -63,9 +68,9 @@ public class Main {
                     "available; cannot negotiate"));
 
             system.provide(new HttpService()
-                .name("buyer-front-end")
+                .name("buyer-operation")
                 .encodings(JSON, EncodingDescriptor.getOrCreate("HTML"))
-                .accessPolicy(whitelist("buyer_operator"))
+                .accessPolicy(cloud())
                 .basePath("/")
 
                 .get("/", (request, response) -> {
@@ -77,10 +82,10 @@ public class Main {
                     return done();
                 })
 
-                .get("/orders", (request, response) -> {
+                .get("/order-summaries", (request, response) -> {
                     response
                         .status(OK)
-                        .body(new ArrayList<>(orders.values()));
+                        .body(new ArrayList<>(orderSummaries.values()));
                     return done();
                 })
 
@@ -101,15 +106,15 @@ public class Main {
                 .await();
 
             system.provide(new HttpService()
-                .name("buyer-back-end")
+                .name("buyer")
                 .encodings(JSON)
                 .accessPolicy(token())
-                .basePath("/back")
+                .basePath("/buyer")
 
                 .post("/orders", (request, response) -> request
-                    .bodyAs(DataOrderDto.class)
+                    .bodyAs(DataOrderSummaryDto.class)
                     .ifSuccess(order -> {
-                        final var isCreated = orders.put(order.articleId(), order) == null;
+                        final var isCreated = orderSummaries.put(order.articleId(), order) == null;
                         response.status(isCreated ? CREATED : OK);
                     })))
 
@@ -148,9 +153,9 @@ public class Main {
                     offers.computeIfPresent(negotiation.id(), (id, offer) -> offer.rebuild()
                         .status(DataOfferStatus.ACCEPTED)
                         .build());
-                    orders.compute(offer.articleId(), (articleId, order) -> {
+                    orderSummaries.compute(offer.articleId(), (articleId, order) -> {
                         if (order == null) {
-                            return new DataOrderBuilder()
+                            return new DataOrderSummaryBuilder()
                                 .quantity(offer.quantity())
                                 .articleId(articleId)
                                 .build();

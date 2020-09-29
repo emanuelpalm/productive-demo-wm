@@ -124,7 +124,6 @@ services:
       - ./config/crypto/uni/truststore.p12:/opt/truststore.p12
       - ./scripts/wait-for.sh:/opt/wait-for.sh
     ports:
-      - 8080:8080
       - 9001:9001
     command: ["/bin/bash", "-c", "cd /opt && ./wait-for.sh sys-seller.uni 9002 1 && java -XX:+UseSerialGC -Xmx1G -Xms32m -jar sys-buyer.jar"]
     networks:
@@ -156,7 +155,6 @@ services:
     build: sys-seller
     volumes:
       - ./config/crypto/uni/system.seller.p12:/opt/keystore.seller.p12
-      - ./config/crypto/uni/system.factory.p12:/opt/keystore.factory.p12
       - ./config/crypto/uni/system.middleware.p12:/opt/keystore.middleware.p12
       - ./config/crypto/uni/truststore.p12:/opt/truststore.p12
       - ./scripts/wait-for.sh:/opt/wait-for.sh

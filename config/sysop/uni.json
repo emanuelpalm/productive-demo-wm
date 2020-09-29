@@ -1,4 +1,8 @@
 {
+  "interfaces": [
+    "HTTP-SECURE-HTML",
+    "HTTP-SECURE-JSON"
+  ],
   "serviceRegistryHost": "service-registry.uni:8443",
   "providers": [
     {
@@ -12,6 +16,12 @@
       "authenticationInfo": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlpPsAXI3cHQBpQeYaZKavjPs2esrhcwI1H1QQc4x6zJfcvkTIOb38xvUgEmsRe6m7DEuDPNYAh6NTZTPOzI7gm+1rGp6KP/+5bDB/tpH6FZZkoS3eeFM30ewFm7GTIr/9CIptzXqiGM+X2iOkFea7HXuwfU0zZxrkNtCDldu7v9CssCQNTyVGnRA1cJgFP0A3zJvVFmVqxagwn2KnOwVjqvviQV9/A+n4IbYqhTrsq4ZxsaBHbpzIab6mzUoKSum7KMQc5SBMb/eYJdsg8hpK6455V1A05sXJ7A6rxzWkvfWPCFOEsZ+ZFq5DGktckXsYuzLNNZ1t9blNjO1rpka0wIDAQAB",
       "port": 9002,
       "systemName": "seller"
+    },
+    {
+      "address": "sys-middleware.uni",
+      "authenticationInfo": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkiZ+B5MJH/1zhNGU9g+4YfB/XjJnfoTPCN4FsH3v/QaG/3fGUaaifWdUSe1sDvg+yv79WJhMpnQBe3tk1UInrN1pAEAAozyKTTsOug/LlClqRWaZcEQRowkKx3dS5gIyuYfQXSNPmaMnkFHw8dWv6LLNDDCqitJD0r/iDsbjMha8Lin0V9ZF06HuCBQOsj3dpGm8Sqly7Rzuaax+rGkGbIuEqZZHSvW5UYw1wd84HGGAmza4IVx+ir39sqOgX0MTszV7CgY/fkkzAoKJPTmF5X02TYTrQyjDaby+NltA3H6DXNd8JOsK5D+tSHZKReGPJDn20H8LtIduzEmfFX5AXwIDAQAB",
+      "port": 9003,
+      "systemName": "middleware"
     }
   ],
   "services": [
@@ -25,9 +35,9 @@
       ]
     },
     {
-      "serviceDefinition": "buyer-back-end",
+      "serviceDefinition": "buyer",
       "providerIndex": 0,
-      "serviceUri": "/",
+      "serviceUri": "/buyer",
       "secure": "TOKEN",
       "interfaces": [
         "HTTP-SECURE-JSON"
@@ -37,6 +47,24 @@
       "serviceDefinition": "event-subscriber",
       "providerIndex": 1,
       "serviceUri": "/events/seller",
+      "secure": "CERTIFICATE",
+      "interfaces": [
+        "HTTP-SECURE-JSON"
+      ]
+    },
+    {
+      "serviceDefinition": "middleware",
+      "providerIndex": 2,
+      "serviceUri": "/middleware",
+      "secure": "TOKEN",
+      "interfaces": [
+        "HTTP-SECURE-JSON"
+      ]
+    },
+    {
+      "serviceDefinition": "event-subscriber",
+      "providerIndex": 2,
+      "serviceUri": "/events/middleware",
       "secure": "CERTIFICATE",
       "interfaces": [
         "HTTP-SECURE-JSON"
@@ -118,6 +146,34 @@
       ],
       "providers": [
         "contract_proxy_seller"
+      ]
+    },
+    {
+      "consumer": "middleware",
+      "services": [
+        "event-subscribe",
+        "event-unsubscribe"
+      ],
+      "providers": [
+        "event_handler"
+      ]
+    },
+    {
+      "consumer": "middleware",
+      "services": [
+        "trusted-contract-observation"
+      ],
+      "providers": [
+        "contract_proxy_seller"
+      ]
+    },
+    {
+      "consumer": "middleware",
+      "services": [
+        "buyer"
+      ],
+      "providers": [
+        "buyer"
       ]
     }
   ]

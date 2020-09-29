@@ -330,8 +330,8 @@
             const $orders = document.getElementById("orders");
             const pollForOrders = function() {
                 const poll = function() {
-                     getJson("/orders")
-                        .then(function(orders) {
+                     getJson("/order-summaries")
+                        .then(function(orderSummaries) {
                             $orders.classList.remove("error");
                             $orders.innerText = "";
 
@@ -345,18 +345,18 @@
                             $h2.innerText = "Quantity";
                             $orders.appendChild($h2);
 
-                            (orders || [])
+                            (orderSummaries || [])
                                 .sort(function(a, b) {
                                     return a.articleId.localeCompare(b.articleId);
                                 })
-                                .forEach(function(order) {
+                                .forEach(function(orderSummary) {
                                     const $articleId = document.createElement("div");
-                                    $articleId.innerText = order.articleId;
+                                    $articleId.innerText = orderSummary.articleId;
                                     $orders.appendChild($articleId);
 
                                     const $quantity = document.createElement("div");
                                     $quantity.classList.add("number");
-                                    $quantity.innerText = order.quantity;
+                                    $quantity.innerText = orderSummary.quantity;
                                     $orders.appendChild($quantity);
                                 });
                         })

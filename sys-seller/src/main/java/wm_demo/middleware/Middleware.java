@@ -8,24 +8,32 @@ import se.arkalix.core.plugin.cp.ArTrustedContractObserverPluginFacade;
 import se.arkalix.core.plugin.cp.ContractNegotiationStatus;
 import se.arkalix.core.plugin.cp.HttpJsonTrustedContractObserverPlugin;
 import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.http.client.HttpClientResponse;
+import se.arkalix.net.http.consumer.HttpConsumer;
+import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.net.http.service.HttpService;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.TrustStore;
+import wm_demo.common.Config;
 import wm_demo.common.DataOrderBuilder;
-import wm_demo.shared.Global;
+import wm_demo.common.DataOrderSummaryBuilder;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
+import static se.arkalix.net.http.HttpMethod.POST;
+import static se.arkalix.net.http.HttpStatus.NOT_FOUND;
 import static se.arkalix.net.http.HttpStatus.OK;
+import static se.arkalix.security.access.AccessPolicy.cloud;
 import static se.arkalix.security.access.AccessPolicy.token;
-import static se.arkalix.security.access.AccessPolicy.whitelist;
 import static se.arkalix.util.concurrent.Future.done;
 
 public class Middleware {
@@ -40,21 +48,26 @@ public class Middleware {
             final var password = new char[]{'1', '2', '3', '4', '5', '6'};
             final var system = new ArSystem.Builder()
                 .identity(new OwnedIdentity.Loader()
-                    .keyStorePath(Global.MIDDLEWARE_KEYSTORE)
+                    .keyStorePath("keystore.middleware.p12")
                     .keyStorePassword(password)
                     .keyPassword(password)
                     .load())
-                .trustStore(TrustStore.read(Global.TRUSTSTORE, password))
-                .localHostnamePort(Global.MIDDLEWARE_HOSTNAME, Global.MIDDLEWARE_PORT)
-                .plugins(HttpJsonCloudPlugin.joinViaServiceRegistryAt(
-                    new InetSocketAddress(Global.SR_HOSTNAME, Global.SR_PORT)),
+                .trustStore(TrustStore.read("truststore.p12", password))
+                .localHostnamePort(Config.MIDDLEWARE_HOSTNAME, Config.MIDDLEWARE_PORT)
+                .plugins(
+                    new HttpJsonCloudPlugin.Builder()
+                        .serviceRegistrationPredicate(service -> service.interfaces()
+                            .stream()
+                            .allMatch(i -> i.encoding().isDtoEncoding()))
+                        .serviceRegistrySocketAddress(new InetSocketAddress(Config.SR_HOSTNAME, Config.SR_PORT))
+                        .build(),
                     new HttpJsonTrustedContractObserverPlugin())
                 .build();
 
             logger.info("Setup middleware system; starting to provide service ...");
 
-            final var articleIdQuantityMap = new ConcurrentHashMap<String, Integer>();
-            final var serialIdArticleIdMap = new ConcurrentHashMap<Long, String>();
+            final var articleIdToSerialIds = new ConcurrentHashMap<String, Set<Long>>();
+            final var serialIdToArticleId = new ConcurrentHashMap<Long, String>();
             final var seenSessionIds = new ConcurrentHashMap<Long, Boolean>();
             final var nextSerialId = new AtomicLong(1000);
 
@@ -96,27 +109,65 @@ public class Middleware {
                         logger.warn("Invalid `quantity` in `component-order.txt` contract; ignoring", exception);
                         return;
                     }
-                    articleIdQuantityMap.compute(articleId, (id, count) -> {
-                        if (count == null) {
-                            count = 0;
+                    final var newSerialIds = LongStream.range(0, quantity)
+                        .map(ignored -> nextSerialId.getAndIncrement())
+                        .boxed()
+                        .collect(Collectors.toUnmodifiableList());
+                    articleIdToSerialIds.compute(articleId, (articleId0, serialIds) -> {
+                        if (serialIds == null) {
+                            serialIds = new CopyOnWriteArraySet<>(newSerialIds);
                         }
-                        return count + quantity;
+                        else {
+                            serialIds.addAll(newSerialIds);
+                        }
+                        return serialIds;
                     });
-                    for (var i = quantity; i-- != 0; ) {
-                        serialIdArticleIdMap.put(nextSerialId.getAndIncrement(), articleId);
+                    for (final var newSerialId : newSerialIds) {
+                        serialIdToArticleId.put(newSerialId, articleId);
                     }
                     logger.info("Increased the order count of `{}` by `{}`", articleId, quantity);
                 });
 
             system.provide(new HttpService()
-                .name("middleware-back-end")
+                .name("middleware")
                 .encodings(JSON)
-                .basePath("/back")
+                .basePath("/middleware")
                 .accessPolicy(token())
 
-                .get("/order/:serialId", (request, response) -> {
-                    response // TODO: Implement!
-                        .status(OK);
+                .get("/orders/:serialId", (request, response) -> {
+                    final var serialId = Long.parseLong(request.pathParameter(0));
+                    final var articleId = serialIdToArticleId.get(serialId);
+                    if (articleId != null) {
+                        response
+                            .status(OK)
+                            .body(new DataOrderBuilder()
+                                .serialId(serialId)
+                                .articleId(articleId)
+                                .build());
+
+                        if (articleIdToSerialIds.get(articleId).remove(serialId)) {
+                            return system.consume()
+                                .name("buyer")
+                                .encodings(JSON)
+                                .using(HttpConsumer.factory())
+                                .flatMap(consumer -> consumer.send(new HttpConsumerRequest()
+                                    .method(POST)
+                                    .uri("/order-summaries")
+                                    .body(articleIdToSerialIds.entrySet()
+                                        .stream()
+                                        .map(entry -> new DataOrderSummaryBuilder()
+                                            .articleId(entry.getKey())
+                                            .quantity(entry.getValue().size())
+                                            .build())
+                                        .collect(Collectors.toUnmodifiableList()))))
+                                .flatMap(HttpClientResponse::rejectIfNotSuccess)
+                                .ifFailure(Throwable.class, throwable ->
+                                    logger.warn("Failed to send update order summaries to buyer system", throwable));
+                        }
+                    }
+                    else {
+                        response.status(NOT_FOUND);
+                    }
                     return done();
                 }))
 
@@ -125,10 +176,10 @@ public class Middleware {
                 .await();
 
             system.provide(new HttpService()
-                .name("middleware-front-end")
+                .name("middleware-operation")
                 .encodings(JSON, EncodingDescriptor.getOrCreate("HTML"))
                 .basePath("/")
-                .accessPolicy(whitelist("middleware_operator"))
+                .accessPolicy(cloud())
 
                 .get("/", (request, response) -> {
                     response
@@ -142,13 +193,14 @@ public class Middleware {
                 .get("/orders", (request, response) -> {
                     response
                         .status(OK)
-                        .body(articleIdQuantityMap.entrySet()
+                        .body(articleIdToSerialIds.entrySet()
                             .stream()
-                            .sorted(Map.Entry.comparingByKey())
-                            .map(entry -> new DataOrderBuilder()
-                                .articleId(entry.getKey())
-                                .quantity(entry.getValue())
-                                .build())
+                            .flatMap(entry -> entry.getValue()
+                                .stream()
+                                .map(serialId -> new DataOrderBuilder()
+                                    .serialId(serialId)
+                                    .articleId(entry.getKey())
+                                    .build()))
                             .collect(Collectors.toUnmodifiableList()));
                     return done();
                 }))

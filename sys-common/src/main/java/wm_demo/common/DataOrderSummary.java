@@ -9,7 +9,13 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoReadableAs(JSON)
 @DtoWritableAs(JSON)
 @DtoToString
-public interface DataOrderWithSerialId {
+public interface DataOrderSummary {
+    int quantity();
     String articleId();
-    long serialId();
+
+    default DataOrderSummaryBuilder rebuild() {
+        return new DataOrderSummaryBuilder()
+            .quantity(quantity())
+            .articleId(articleId());
+    }
 }
