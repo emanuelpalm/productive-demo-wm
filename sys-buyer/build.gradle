@@ -3,7 +3,7 @@ plugins {
     id 'application'
 }
 
-mainClassName = "${project.group}.buyer.Main"
+mainClassName = "${project.group}.buyer.Buyer"
 
 ext {
     versionArkalix = '0.4.5-SNAPSHOT'

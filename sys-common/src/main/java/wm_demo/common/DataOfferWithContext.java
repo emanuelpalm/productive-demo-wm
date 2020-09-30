@@ -13,7 +13,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoWritableAs(JSON)
 @DtoToString
 public interface DataOfferWithContext {
-    long id();
+    String id();
 
     Instant timestamp();
 

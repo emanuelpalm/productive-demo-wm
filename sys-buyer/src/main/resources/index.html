@@ -6,6 +6,8 @@
     <style>
         html {
             color: #333;
+            height: 100%;
+            width: 100%;
         }
 
         body {
@@ -13,9 +15,11 @@
             background-color: #eee;
             display: flex;
             flex-direction: row;
+            height: 100%;
             justify-content: center;
             margin: 0;
             padding: 0;
+            width: 100%;
         }
 
         body > section:not(:last-child) {
@@ -27,18 +31,45 @@
             margin: 0 0 1rem 0;
         }
 
+        #modal-dialog {
+            align-items: center;
+            background-color: #00000060;
+            display: flex;
+            height: 100%;
+            justify-content: center;
+            left: 0;
+            position: absolute;
+            top: 0;
+            width: 100%;
+        }
+
+        #modal-dialog.hidden {
+            display: none;
+        }
+
+        #counter-offer-form,
         #offer-form {
             background-color: #fff;
             border-radius: 0.5rem;
             box-shadow: 0 0.2rem 0.1rem #00000020;
             display: grid;
-            grid-template-columns: 10rem 10rem;
+            grid-gap: 1rem;
+            grid-template-columns: 9.5rem 9.5rem;
             margin: 1rem 0;
             min-height: 20rem;
             padding: 1rem;
-            row-gap: 1rem;
         }
 
+        #counter-offer-form > h1 {
+            margin: 0;
+        }
+
+        #counter-offer-form > .id {
+            margin-bottom: 1rem;
+        }
+
+        #counter-offer-form > h1,
+        #counter-offer-form > .id,
         #offer-form > h1 {
             grid-column-start: span 2;
         }
@@ -48,27 +79,14 @@
             margin: 0;
         }
 
-        #offer-form:not(.counter-offer) > .counter-offer {
-            display: none;
-        }
-
-        #offer-form:not(.counter-offer) > .offer {
-            display: initial;
-        }
-
-        #offer-form.counter-offer > .counter-offer {
-            display: initial;
-        }
-
-        #offer-form.counter-offer > .offer {
-            display: none;
-        }
-
+        #counter-offer-form > select,
+        #counter-offer-form > input,
         #offer-form > select,
         #offer-form > input {
             padding: 0.25rem;
         }
 
+        #counter-offer-form > select > label,
         #offer-form > label {
             align-self: center;
         }
@@ -187,31 +205,17 @@
     </style>
     <script>
         window.onload = function() {
-            let savedOfferFormData = {};
-
-            const $offerForm = document.getElementById("offer-form");
+            var $offerForm = document.getElementById("offer-form");
             $offerForm.addEventListener("submit", function(event) {
                 event.preventDefault();
                 document.activeElement.blur();
                 setOfferFormDisabled(true);
 
-                const data = getOfferFormData();
-                if (data.id) {
-                    statusInfo("Sending counter-offer #" + data.id + " response ...");
-                }
-                else {
-                    statusInfo("Sending offer ...");
-                }
+                var data = getOfferFormData();
+                statusInfo("Sending offer ...");
                 postJson("/offers", data)
                     .then(function(response) {
-                        if (data.id) {
-                            setOfferFormData(savedOfferFormData);
-                            statusInfo("Counter-offer #" + data.id + " response submitted.");
-                            $offerForm.classList.remove("counter-offer");
-                        }
-                        else {
-                            statusInfo("Offer submitted.");
-                        }
+                        statusInfo("Offer submitted.");
                     })
                     .catch(function(error) {
                         console.log(error);
@@ -224,39 +228,70 @@
                     });
             });
 
-            const $offers = document.getElementById("offers");
-            const pollForOffers = function() {
+            var $modalDialog = document.getElementById("modal-dialog");
+            var $counterOfferForm = document.getElementById("counter-offer-form");
+            $counterOfferForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                document.activeElement.blur();
+                setCounterOfferFormDisabled(true);
+
+                var data = getCounterOfferFormData();
+                statusInfo("Sending counter-offer #" + data.id + " response ...");
+                postJson("/offers", data)
+                    .then(function(response) {
+                        statusInfo("Counter-offer #" + data.id + " response submitted.");
+                    })
+                    .catch(function(error) {
+                        console.log(error);
+                        statusError(error.message);
+                    })
+                    .finally(function() {
+                        setTimeout(function() {
+                            setCounterOfferFormDisabled(false);
+                        }, 3000);
+                        $modalDialog.classList.add("hidden");
+                    });
+            });
+            document.getElementById("counter-offer-form-cancel")
+                .addEventListener("click", function(event) {
+                    event.preventDefault();
+                    document.activeElement.blur();
+                    $modalDialog.classList.add("hidden");
+                });
+
+            var $offers = document.getElementById("offers");
+            var pollForOffers = function() {
                 getJson("/offers")
                     .then(function(offers) {
                         $offers.classList.remove("error");
                         $offers.innerText = "";
 
-                        const $h1 = document.createElement("div");
+                        var $h1 = document.createElement("div");
                         $h1.className = "header";
                         $h1.innerText = "ID";
                         $offers.appendChild($h1);
 
-                        const $h2 = document.createElement("div");
+                        var $h2 = document.createElement("div");
                         $h2.className = "header";
                         $h2.innerText = "Drilled?";
                         $offers.appendChild($h2);
 
-                        const $h3 = document.createElement("div");
+                        var $h3 = document.createElement("div");
                         $h3.className = "header";
                         $h3.innerText = "Milled?";
                         $offers.appendChild($h3);
 
-                        const $h4 = document.createElement("div");
+                        var $h4 = document.createElement("div");
                         $h4.className = "header";
                         $h4.innerText = "Quantity";
                         $offers.appendChild($h4);
 
-                        const $h5 = document.createElement("div");
+                        var $h5 = document.createElement("div");
                         $h5.className = "header";
                         $h5.innerText = "Unit Price, EUR";
                         $offers.appendChild($h5);
 
-                        const $h6 = document.createElement("div");
+                        var $h6 = document.createElement("div");
                         $h6.className = "header";
                         $h6.innerText = "Status";
                         $offers.appendChild($h6);
@@ -268,45 +303,57 @@
                                 return (at > bt) ? 1 : ((bt > at) ? -1 : 0);
                             })
                             .forEach(function(offer) {
-                                const $id = document.createElement("div");
+                                var $id = document.createElement("div");
                                 $id.classList.add("number");
                                 $id.classList.add(offer.status.toLowerCase());
                                 $id.innerText = offer.id;
                                 $offers.appendChild($id);
 
-                                const $drilled = document.createElement("div");
+                                var $drilled = document.createElement("div");
                                 $drilled.innerText = offer.drilled ? "Yes" : "No";
                                 $drilled.classList.add(offer.status.toLowerCase());
                                 $offers.appendChild($drilled);
 
-                                const $milled = document.createElement("div");
+                                var $milled = document.createElement("div");
                                 $milled.innerText = offer.milled ? "Yes" : "No";
                                 $milled.classList.add(offer.status.toLowerCase());
                                 $offers.appendChild($milled);
 
-                                const $quantity = document.createElement("div");
+                                var $quantity = document.createElement("div");
                                 $quantity.classList.add("number");
                                 $quantity.classList.add(offer.status.toLowerCase());
                                 $quantity.innerText = offer.quantity;
                                 $offers.appendChild($quantity);
 
-                                const $pricePerUnit = document.createElement("div");
+                                var $pricePerUnit = document.createElement("div");
                                 $pricePerUnit.innerText = offer.pricePerUnit.toFixed(2);
                                 $pricePerUnit.classList.add("number");
                                 $pricePerUnit.classList.add(offer.status.toLowerCase());
                                 $offers.appendChild($pricePerUnit);
 
-                                const $status = document.createElement("div");
+                                var $status = document.createElement("div");
                                 $status.innerText = offer.status;
                                 $status.classList.add("status");
                                 $status.classList.add(offer.status.toLowerCase());
                                 if (offer.status.toUpperCase() === "COUNTERED") {
-                                    $status.addEventListener("click", function(event) {
+                                    var statusClickHandler = function(event) {
                                         event.preventDefault();
-                                        savedOfferFormData = getOfferFormData();
-                                        setOfferFormData(offer.counterOffer);
-                                        $offerForm.classList.add("counter-offer");
-                                    });
+
+                                        var data = offer.counterOffer;
+                                        if (typeof data.id === "undefined" && typeof offer.id !== "undefined") {
+                                            data.id = offer.id;
+                                        }
+                                        else {
+                                            statusWarning("No ID in counter-offer; creating new negotiation.");
+                                        }
+                                        setCounterOfferFormData(data);
+
+                                        $modalDialog.classList.remove("hidden");
+                                        $status.removeEventListener("click", statusClickHandler);
+                                        $status.innerText = "HANDLED";
+                                        $status.style.cursor = "initial";
+                                    };
+                                    $status.addEventListener("click", statusClickHandler);
                                 }
                                 $offers.appendChild($status);
                             });
@@ -322,19 +369,19 @@
             };
             pollForOffers();
 
-            const $orders = document.getElementById("orders");
-            const pollForOrders = function() {
+            var $orders = document.getElementById("orders");
+            var pollForOrders = function() {
                 getJson("/order-summaries")
                     .then(function(orderSummaries) {
                         $orders.classList.remove("error");
                         $orders.innerText = "";
 
-                        const $h1 = document.createElement("div");
+                        var $h1 = document.createElement("div");
                         $h1.className = "header";
                         $h1.innerText = "Article ID";
                         $orders.appendChild($h1);
 
-                        const $h2 = document.createElement("div");
+                        var $h2 = document.createElement("div");
                         $h2.className = "header";
                         $h2.innerText = "Quantity";
                         $orders.appendChild($h2);
@@ -344,11 +391,11 @@
                                 return a.articleId.localeCompare(b.articleId);
                             })
                             .forEach(function(orderSummary) {
-                                const $articleId = document.createElement("div");
+                                var $articleId = document.createElement("div");
                                 $articleId.innerText = orderSummary.articleId;
                                 $orders.appendChild($articleId);
 
-                                const $quantity = document.createElement("div");
+                                var $quantity = document.createElement("div");
                                 $quantity.classList.add("number");
                                 $quantity.innerText = orderSummary.quantity;
                                 $orders.appendChild($quantity);
@@ -363,14 +410,21 @@
                         window.clearInterval(orderPoller);
                         window.setTimeout(pollForOrders, 15000);
                     });
-                };
             };
             pollForOrders();
         };
 
+        function getCounterOfferFormData() {
+            return getFormData("#counter-offer-form select, #counter-offer-form input, #counter-offer-form .input");
+        }
+
         function getOfferFormData() {
-            const data = {};
-            document.querySelectorAll("#offer-form select, #offer-form input, #offer-form .input").forEach(function($element) {
+            return getFormData("#offer-form select, #offer-form input, #offer-form .input");
+        }
+
+        function getFormData(queryString) {
+            var data = {};
+            document.querySelectorAll(queryString).forEach(function($element) {
                 let value;
 
                 let getValue;
@@ -416,29 +470,47 @@
             return data;
         }
 
+        function setCounterOfferFormData(data) {
+            return setFormData("#counter-offer-form select, #counter-offer-form input, #counter-offer-form .input", data);
+        }
+
         function setOfferFormData(data) {
-            document.querySelectorAll("#offer-form select, #offer-form input, #offer-form .input").forEach(function($element) {
-                let name = $element.name;
-                if (name === undefined) {
-                    name = $element.getAttribute("data-name");
-                }
-                const value = data[name];
-                if ((typeof value === "string" && value.trim().length > 0) || (value !== undefined && value !== NaN)) {
-                    if (typeof $element.value === "number") {
-                        $element.value = value.toFixed(2);
+            return setFormData("#offer-form select, #offer-form input, #offer-form .input", data);
+        }
+
+        function setFormData(queryString, data) {
+            document.querySelectorAll(queryString)
+                .forEach(function($element) {
+                    let name = $element.name;
+                    if (name === undefined) {
+                        name = $element.getAttribute("data-name");
                     }
-                    else if ($element.value !== undefined) {
-                        $element.value = value;
+                    var value = data[name];
+                    if ((typeof value === "string" && value.trim().length > 0) || (value !== undefined && value !== NaN)) {
+                        if (typeof value === "number" && !Number.isInteger(value)) {
+                            value = (value + 0.01).toFixed(2);
+                        }
+
+                        if ($element.value !== undefined) {
+                            $element.value = value;
+                        }
+                        else {
+                            $element.innerText = value;
+                        }
                     }
-                    else {
-                        $element.innerText = value;
-                    }
-                }
-            });
+                });
+        }
+
+        function setCounterOfferFormDisabled(isDisabled) {
+            return setFormDisabled("#counter-offer-form select, #counter-offer-form input, #counter-offer-form .input.editable", isDisabled);
         }
 
         function setOfferFormDisabled(isDisabled) {
-            document.querySelectorAll("#offer-form select, #offer-form input, #offer-form .input.editable").forEach(function($element) {
+            return setFormDisabled("#offer-form select, #offer-form input, #offer-form .input.editable", isDisabled);
+        }
+
+        function setFormDisabled(queryString, isDisabled) {
+            document.querySelectorAll(queryString).forEach(function($element) {
                 if ($element.value !== undefined) {
                     $element.disabled = isDisabled;
                 }
@@ -455,7 +527,7 @@
 
         function status(type, message) {
             console.log(type + ": " + message);
-            const $status = document.getElementById("status");
+            var $status = document.getElementById("status");
             $status.className = type;
             $status.innerText = message;
         }
@@ -490,7 +562,7 @@
                     if (typeof xhr.responseText === "undefined" || xhr.responseText.length === 0) {
                         return null;
                     }
-                    const contentType = (xhr.getResponseHeader("content-type") || "").trim().toLowerCase();
+                    var contentType = (xhr.getResponseHeader("content-type") || "").trim().toLowerCase();
                     if (!contentType.startsWith("application/json")) {
                         throw {
                             "name": "badResponseType",
@@ -504,7 +576,7 @@
 
         function request(method, url, headers, payload) {
             return new Promise(function(resolve, reject) {
-                const xhr = new XMLHttpRequest();
+                var xhr = new XMLHttpRequest();
                 xhr.timeout = 3000; // 3 seconds.
                 xhr.open(method, url);
                 xhr.addEventListener("load", function() {
@@ -534,7 +606,7 @@
                         "data": this
                     });
                 });
-                for (const [key, value] of Object.entries(headers)) {
+                for (var [key, value] of Object.entries(headers)) {
                     xhr.setRequestHeader(key, value.toString());
                 }
                 xhr.send(payload);
@@ -543,37 +615,58 @@
     </script>
 </head>
 <body>
-    <section class="offer">
-        <form id="offer-form" autocomplete="off">
-            <h1 class="offer">New Offer</h1>
-            <h1 class="counter-offer">Counter-Offer #<span class="input" data-name="id" data-class="number"></span></h1>
-            <label>Drilled?</label>
-            <select name="drilled" class="boolean">
-                <option value="true">Yes</option>
-                <option selected="selected" value="false">No</option>
-            </select>
-            <label>Milled?</label>
-            <select name="milled" class="boolean">
-                <option value="true">Yes</option>
-                <option selected="selected" value="false">No</option>
-            </select>
-            <label>Quantity</label>
-            <input type="number" name="quantity" min="1" step="1" value="1" class="number" />
-            <label>Unit Price, Euro</label>
-            <input type="text" name="pricePerUnit" min="0.00" pattern="[0-9]+(\.[0-9]{2})?" value="420.00" style="text-align: right;" class="number" />
-            <input id="offer-form-submit" type="submit" value="Send">
-        </form>
-        <div id="status" class="info">Click "Send" to offer a new production order. Pending <i>offers</i> are listed
-            under <i>Sent Offers</i>, while accepted and pending <i>orders</i> are listed under <i>In-Progress
+<section class="offer">
+    <form id="offer-form" autocomplete="off">
+        <h1>New Offer</h1>
+        <label>Drilled?</label>
+        <select name="drilled" class="boolean">
+            <option value="true">Yes</option>
+            <option selected="selected" value="false">No</option>
+        </select>
+        <label>Milled?</label>
+        <select name="milled" class="boolean">
+            <option value="true">Yes</option>
+            <option selected="selected" value="false">No</option>
+        </select>
+        <label>Quantity</label>
+        <input type="number" name="quantity" min="1" step="1" value="1" class="number" />
+        <label>Unit Price, Euro</label>
+        <input type="text" name="pricePerUnit" min="0.00" pattern="[0-9]+(\.[0-9]{2})?" value="420.00" style="text-align: right;" class="number" />
+        <input id="offer-form-submit" type="submit" value="Send">
+    </form>
+    <div id="status" class="info">Click "Send" to offer a new production order. Pending <i>offers</i> are listed
+        under <i>Sent Offers</i>, while accepted and pending <i>orders</i> are listed under <i>In-Progress
             Orders</i>.</div>
-    </section>
-    <section class="offers">
-        <h1>Sent Offers</h1>
-        <div id="offers"></div>
-    </section>
-    <section class="orders">
-        <h1>In-Progress Orders</h1>
-        <div id="orders"></div>
-    </section>
+</section>
+<section class="offers">
+    <h1>Sent Offers</h1>
+    <div id="offers"></div>
+</section>
+<section class="orders">
+    <h1>In-Progress Orders</h1>
+    <div id="orders"></div>
+</section>
+<div id="modal-dialog" class="hidden">
+    <form id="counter-offer-form">
+        <h1>Counter-Offer</h1>
+        <div class="id">#<span class="input" data-name="id" data-class="text"></span></div>
+        <label>Drilled?</label>
+        <select name="drilled" class="boolean">
+            <option value="true">Yes</option>
+            <option selected="selected" value="false">No</option>
+        </select>
+        <label>Milled?</label>
+        <select name="milled" class="boolean">
+            <option value="true">Yes</option>
+            <option selected="selected" value="false">No</option>
+        </select>
+        <label>Quantity</label>
+        <input type="number" name="quantity" min="1" step="1" value="1" class="number" />
+        <label>Unit Price, Euro</label>
+        <input type="text" name="pricePerUnit" min="0.00" pattern="[0-9]+(\.[0-9]{2})?" value="420.00" style="text-align: right;" class="number" />
+        <input id="counter-offer-form-submit" type="submit" value="Send">
+        <input id="counter-offer-form-cancel" type="button" value="Cancel">
+    </form>
+</div>
 </body>
 </html>
