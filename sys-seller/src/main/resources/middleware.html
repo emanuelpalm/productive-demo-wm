@@ -111,50 +111,46 @@
     </style>
     <script>
         window.onload = function() {
-            let orderPoller;
             const $orders = document.getElementById("orders");
             const pollForOrders = function() {
-                const poll = function() {
-                     getJson("/orders")
-                        .then(function(orders) {
-                            $orders.classList.remove("error");
-                            $orders.innerText = "";
+                getJson("/orders")
+                    .then(function(orders) {
+                       $orders.classList.remove("error");
+                        $orders.innerText = "";
 
-                            const $h1 = document.createElement("div");
-                            $h1.className = "header";
-                            $h1.innerText = "Serial ID";
-                            $orders.appendChild($h1);
+                        const $h1 = document.createElement("div");
+                        $h1.className = "header";
+                        $h1.innerText = "Serial ID";
+                        $orders.appendChild($h1);
 
-                            const $h2 = document.createElement("div");
-                            $h2.className = "header";
-                            $h2.innerText = "Article ID";
-                            $orders.appendChild($h2);
+                        const $h2 = document.createElement("div");
+                        $h2.className = "header";
+                        $h2.innerText = "Article ID";
+                        $orders.appendChild($h2);
 
-                            (orders || [])
-                                .sort(function(a, b) {
-                                    return a.serialId - b.serialId;
-                                })
-                                .forEach(function(order) {
-                                    const $serialId = document.createElement("div");
-                                    $serialId.classList.add("number");
-                                    $serialId.innerText = order.serialId;
-                                    $orders.appendChild($serialId);
+                        (orders || [])
+                            .sort(function(a, b) {
+                                return a.serialId - b.serialId;
+                            })
+                            .forEach(function(order) {
+                                const $serialId = document.createElement("div");
+                                $serialId.classList.add("number");
+                                $serialId.innerText = order.serialId;
+                                $orders.appendChild($serialId);
 
-                                    const $articleId = document.createElement("div");
-                                    $articleId.innerText = order.articleId;
-                                    $orders.appendChild($articleId);
-                                });
-                        })
-                        .catch(function(error) {
-                            console.log(error);
-                            $orders.classList.add("error");
-                            $orders.innerText = "Failed to retrieve pending manufacturing orders. Trying again in 10 seconds ...";
-                            window.clearInterval(orderPoller);
-                            window.setTimeout(pollForOrders, 10000);
-                        });
-                };
-                poll();
-                orderPoller = window.setInterval(poll, 2000);
+                                const $articleId = document.createElement("div");
+                                $articleId.innerText = order.articleId;
+                                $orders.appendChild($articleId);
+                            });
+
+                        window.setTimeout(pollForOrders, 3000);
+                    })
+                    .catch(function(error) {
+                        console.log(error);
+                        $orders.classList.add("error");
+                        $orders.innerText = "Failed to retrieve pending manufacturing orders. Trying again in 15 seconds ...";
+                        window.setTimeout(pollForOrders, 15000);
+                    });
             };
             pollForOrders();
         };

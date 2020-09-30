@@ -224,152 +224,146 @@
                     });
             });
 
-            let offerPoller;
             const $offers = document.getElementById("offers");
             const pollForOffers = function() {
-                const poll = function() {
-                    getJson("/offers")
-                        .then(function(offers) {
-                            $offers.classList.remove("error");
-                            $offers.innerText = "";
+                getJson("/offers")
+                    .then(function(offers) {
+                        $offers.classList.remove("error");
+                        $offers.innerText = "";
 
-                            const $h1 = document.createElement("div");
-                            $h1.className = "header";
-                            $h1.innerText = "ID";
-                            $offers.appendChild($h1);
+                        const $h1 = document.createElement("div");
+                        $h1.className = "header";
+                        $h1.innerText = "ID";
+                        $offers.appendChild($h1);
 
-                            const $h2 = document.createElement("div");
-                            $h2.className = "header";
-                            $h2.innerText = "Drilled?";
-                            $offers.appendChild($h2);
+                        const $h2 = document.createElement("div");
+                        $h2.className = "header";
+                        $h2.innerText = "Drilled?";
+                        $offers.appendChild($h2);
 
-                            const $h3 = document.createElement("div");
-                            $h3.className = "header";
-                            $h3.innerText = "Milled?";
-                            $offers.appendChild($h3);
+                        const $h3 = document.createElement("div");
+                        $h3.className = "header";
+                        $h3.innerText = "Milled?";
+                        $offers.appendChild($h3);
 
-                            const $h4 = document.createElement("div");
-                            $h4.className = "header";
-                            $h4.innerText = "Quantity";
-                            $offers.appendChild($h4);
+                        const $h4 = document.createElement("div");
+                        $h4.className = "header";
+                        $h4.innerText = "Quantity";
+                        $offers.appendChild($h4);
 
-                            const $h5 = document.createElement("div");
-                            $h5.className = "header";
-                            $h5.innerText = "Unit Price, EUR";
-                            $offers.appendChild($h5);
+                        const $h5 = document.createElement("div");
+                        $h5.className = "header";
+                        $h5.innerText = "Unit Price, EUR";
+                        $offers.appendChild($h5);
 
-                            const $h6 = document.createElement("div");
-                            $h6.className = "header";
-                            $h6.innerText = "Status";
-                            $offers.appendChild($h6);
+                        const $h6 = document.createElement("div");
+                        $h6.className = "header";
+                        $h6.innerText = "Status";
+                        $offers.appendChild($h6);
 
-                            (offers || [])
-                                .sort(function(a, b) {
-                                    var at = new Date(a.timestamp);
-                                    var bt = new Date(b.timestamp);
-                                    return (at > bt) ? 1 : ((bt > at) ? -1 : 0);
-                                })
-                                .forEach(function(offer) {
-                                    const $id = document.createElement("div");
-                                    $id.classList.add("number");
-                                    $id.classList.add(offer.status.toLowerCase());
-                                    $id.innerText = offer.id;
-                                    $offers.appendChild($id);
+                        (offers || [])
+                            .sort(function(a, b) {
+                                var at = new Date(a.timestamp);
+                                var bt = new Date(b.timestamp);
+                                return (at > bt) ? 1 : ((bt > at) ? -1 : 0);
+                            })
+                            .forEach(function(offer) {
+                                const $id = document.createElement("div");
+                                $id.classList.add("number");
+                                $id.classList.add(offer.status.toLowerCase());
+                                $id.innerText = offer.id;
+                                $offers.appendChild($id);
 
-                                    const $drilled = document.createElement("div");
-                                    $drilled.innerText = offer.drilled ? "Yes" : "No";
-                                    $drilled.classList.add(offer.status.toLowerCase());
-                                    $offers.appendChild($drilled);
+                                const $drilled = document.createElement("div");
+                                $drilled.innerText = offer.drilled ? "Yes" : "No";
+                                $drilled.classList.add(offer.status.toLowerCase());
+                                $offers.appendChild($drilled);
 
-                                    const $milled = document.createElement("div");
-                                    $milled.innerText = offer.milled ? "Yes" : "No";
-                                    $milled.classList.add(offer.status.toLowerCase());
-                                    $offers.appendChild($milled);
+                                const $milled = document.createElement("div");
+                                $milled.innerText = offer.milled ? "Yes" : "No";
+                                $milled.classList.add(offer.status.toLowerCase());
+                                $offers.appendChild($milled);
 
-                                    const $quantity = document.createElement("div");
-                                    $quantity.classList.add("number");
-                                    $quantity.classList.add(offer.status.toLowerCase());
-                                    $quantity.innerText = offer.quantity;
-                                    $offers.appendChild($quantity);
+                                const $quantity = document.createElement("div");
+                                $quantity.classList.add("number");
+                                $quantity.classList.add(offer.status.toLowerCase());
+                                $quantity.innerText = offer.quantity;
+                                $offers.appendChild($quantity);
 
-                                    const $pricePerUnit = document.createElement("div");
-                                    $pricePerUnit.innerText = offer.pricePerUnit.toFixed(2);
-                                    $pricePerUnit.classList.add("number");
-                                    $pricePerUnit.classList.add(offer.status.toLowerCase());
-                                    $offers.appendChild($pricePerUnit);
+                                const $pricePerUnit = document.createElement("div");
+                                $pricePerUnit.innerText = offer.pricePerUnit.toFixed(2);
+                                $pricePerUnit.classList.add("number");
+                                $pricePerUnit.classList.add(offer.status.toLowerCase());
+                                $offers.appendChild($pricePerUnit);
 
-                                    const $status = document.createElement("div");
-                                    $status.innerText = offer.status;
-                                    $status.classList.add("status");
-                                    $status.classList.add(offer.status.toLowerCase());
-                                    if (offer.status.toUpperCase() === "COUNTERED") {
-                                        $status.addEventListener("click", function(event) {
-                                            event.preventDefault();
-                                            savedOfferFormData = getOfferFormData();
-                                            setOfferFormData(offer.counterOffer);
-                                            $offerForm.classList.add("counter-offer");
-                                        });
-                                    }
-                                    $offers.appendChild($status);
-                                });
-                        })
-                        .catch(function(error) {
-                            console.log(error);
-                            $offers.classList.add("error");
-                            $offers.innerText = "Failed to retrieve pending offers. Trying again in 10 seconds ...";
-                            window.clearInterval(offerPoller);
-                            window.setTimeout(pollForOffers, 10000);
-                        });
-                };
-                poll();
-                offerPoller = window.setInterval(poll, 2000);
+                                const $status = document.createElement("div");
+                                $status.innerText = offer.status;
+                                $status.classList.add("status");
+                                $status.classList.add(offer.status.toLowerCase());
+                                if (offer.status.toUpperCase() === "COUNTERED") {
+                                    $status.addEventListener("click", function(event) {
+                                        event.preventDefault();
+                                        savedOfferFormData = getOfferFormData();
+                                        setOfferFormData(offer.counterOffer);
+                                        $offerForm.classList.add("counter-offer");
+                                    });
+                                }
+                                $offers.appendChild($status);
+                            });
+
+                        window.setTimeout(pollForOffers, 3000);
+                    })
+                    .catch(function(error) {
+                        console.log(error);
+                        $offers.classList.add("error");
+                        $offers.innerText = "Failed to retrieve pending offers. Trying again in 15 seconds ...";
+                        window.setTimeout(pollForOffers, 15000);
+                    });
             };
             pollForOffers();
 
-            let orderPoller;
             const $orders = document.getElementById("orders");
             const pollForOrders = function() {
-                const poll = function() {
-                     getJson("/order-summaries")
-                        .then(function(orderSummaries) {
-                            $orders.classList.remove("error");
-                            $orders.innerText = "";
+                getJson("/order-summaries")
+                    .then(function(orderSummaries) {
+                        $orders.classList.remove("error");
+                        $orders.innerText = "";
 
-                            const $h1 = document.createElement("div");
-                            $h1.className = "header";
-                            $h1.innerText = "Article ID";
-                            $orders.appendChild($h1);
+                        const $h1 = document.createElement("div");
+                        $h1.className = "header";
+                        $h1.innerText = "Article ID";
+                        $orders.appendChild($h1);
 
-                            const $h2 = document.createElement("div");
-                            $h2.className = "header";
-                            $h2.innerText = "Quantity";
-                            $orders.appendChild($h2);
+                        const $h2 = document.createElement("div");
+                        $h2.className = "header";
+                        $h2.innerText = "Quantity";
+                        $orders.appendChild($h2);
 
-                            (orderSummaries || [])
-                                .sort(function(a, b) {
-                                    return a.articleId.localeCompare(b.articleId);
-                                })
-                                .forEach(function(orderSummary) {
-                                    const $articleId = document.createElement("div");
-                                    $articleId.innerText = orderSummary.articleId;
-                                    $orders.appendChild($articleId);
+                        (orderSummaries || [])
+                            .sort(function(a, b) {
+                                return a.articleId.localeCompare(b.articleId);
+                            })
+                            .forEach(function(orderSummary) {
+                                const $articleId = document.createElement("div");
+                                $articleId.innerText = orderSummary.articleId;
+                                $orders.appendChild($articleId);
 
-                                    const $quantity = document.createElement("div");
-                                    $quantity.classList.add("number");
-                                    $quantity.innerText = orderSummary.quantity;
-                                    $orders.appendChild($quantity);
-                                });
-                        })
-                        .catch(function(error) {
-                            console.log(error);
-                            $orders.classList.add("error");
-                            $orders.innerText = "Failed to retrieve pending manufacturing orders. Trying again in 10 seconds ...";
-                            window.clearInterval(orderPoller);
-                            window.setTimeout(pollForOrders, 10000);
-                        });
+                                const $quantity = document.createElement("div");
+                                $quantity.classList.add("number");
+                                $quantity.innerText = orderSummary.quantity;
+                                $orders.appendChild($quantity);
+                            });
+
+                        window.setTimeout(pollForOrders, 3000);
+                    })
+                    .catch(function(error) {
+                        console.log(error);
+                        $orders.classList.add("error");
+                        $orders.innerText = "Failed to retrieve pending manufacturing orders. Trying again in 15 seconds ...";
+                        window.clearInterval(orderPoller);
+                        window.setTimeout(pollForOrders, 15000);
+                    });
                 };
-                poll();
-                orderPoller = window.setInterval(poll, 2000);
             };
             pollForOrders();
         };
