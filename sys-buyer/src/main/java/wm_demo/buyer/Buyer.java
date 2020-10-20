@@ -41,6 +41,8 @@ public class Buyer {
     public static void main(final String[] args) {
         logger.info("Productive 4.0 Workflow Manager Demonstrator - Buyer System");
         try {
+            final var prop = JaimeProperties.getProp();
+
             final var password = new char[]{'1', '2', '3', '4', '5', '6'};
             final var system = new ArSystem.Builder()
                 .identity(new OwnedIdentity.Loader()
@@ -49,13 +51,17 @@ public class Buyer {
                     .keyPassword(password)
                     .load())
                 .trustStore(TrustStore.read("truststore.p12", password))
-                .localHostnamePort(Config.BUYER_HOSTNAME, Config.BUYER_PORT)
+                .localHostnamePort(
+                    prop.getProperty("server.address", Config.BUYER_HOSTNAME),
+                    prop.getIntProperty("server.port", Config.BUYER_PORT))
                 .plugins(
                     new HttpJsonCloudPlugin.Builder()
                         .serviceRegistrationPredicate(service -> service.interfaces()
                             .stream()
                             .allMatch(i -> i.encoding().isDtoEncoding()))
-                        .serviceRegistrySocketAddress(new InetSocketAddress(Config.SR_HOSTNAME, Config.SR_PORT))
+                        .serviceRegistrySocketAddress(new InetSocketAddress(
+                            prop.getProperty("sr_hostname", Config.SR_HOSTNAME),
+                            prop.getIntProperty("sr_port", Config.SR_PORT)))
                         .build(),
                     new HttpJsonTrustedContractNegotiatorPlugin())
                 .build();
@@ -127,7 +133,10 @@ public class Buyer {
         }
     }
 
-    private static Future<?> handleOfferUsing(final DataOffer offer, final ArTrustedContractNegotiatorPluginFacade facade) {
+    private static Future<?> handleOfferUsing(
+        final DataOffer offer,
+        final ArTrustedContractNegotiatorPluginFacade facade
+    ) {
         final var contract = offer.toContract();
 
         // Handle counter-offer replies.
@@ -162,7 +171,10 @@ public class Buyer {
                 }
 
                 @Override
-                public void onOffer(final TrustedContractNegotiationDto negotiation, final TrustedContractNegotiatorResponder responder) {
+                public void onOffer(
+                    final TrustedContractNegotiationDto negotiation,
+                    final TrustedContractNegotiatorResponder responder
+                ) {
                     final var contracts = negotiation.offer().contracts();
                     if (contracts.size() != 1) {
                         throw new IllegalArgumentException("Negotiation offer must contain exactly one contract");

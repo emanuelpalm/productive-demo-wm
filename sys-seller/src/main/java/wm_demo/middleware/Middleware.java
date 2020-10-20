@@ -17,6 +17,7 @@ import se.arkalix.security.identity.TrustStore;
 import wm_demo.common.Config;
 import wm_demo.common.DataOrderBuilder;
 import wm_demo.common.DataOrderSummaryBuilder;
+import wm_demo.common.JaimeProperties;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +46,8 @@ public class Middleware {
     public static void main(final String[] args) {
         logger.info("Productive 4.0 Workflow Manager Demonstrator - Middleware System");
         try {
+            final var prop = JaimeProperties.getProp();
+
             final var password = new char[]{'1', '2', '3', '4', '5', '6'};
             final var system = new ArSystem.Builder()
                 .identity(new OwnedIdentity.Loader()
@@ -53,13 +56,17 @@ public class Middleware {
                     .keyPassword(password)
                     .load())
                 .trustStore(TrustStore.read("truststore.p12", password))
-                .localHostnamePort(Config.MIDDLEWARE_HOSTNAME, Config.MIDDLEWARE_PORT)
+                .localHostnamePort(
+                    prop.getProperty("server.address", Config.MIDDLEWARE_HOSTNAME),
+                    prop.getIntProperty("server.port", Config.MIDDLEWARE_PORT))
                 .plugins(
                     new HttpJsonCloudPlugin.Builder()
                         .serviceRegistrationPredicate(service -> service.interfaces()
                             .stream()
                             .allMatch(i -> i.encoding().isDtoEncoding()))
-                        .serviceRegistrySocketAddress(new InetSocketAddress(Config.SR_HOSTNAME, Config.SR_PORT))
+                        .serviceRegistrySocketAddress(new InetSocketAddress(
+                            prop.getProperty("sr_hostname", Config.SR_HOSTNAME),
+                            prop.getIntProperty("sr_port", Config.SR_PORT)))
                         .build(),
                     new HttpJsonTrustedContractObserverPlugin())
                 .build();
