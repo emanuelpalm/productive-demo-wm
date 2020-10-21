@@ -160,7 +160,7 @@ public class Middleware {
                                 .oneUsing(HttpConsumer.factory())
                                 .flatMap(consumer -> consumer.send(new HttpConsumerRequest()
                                     .method(POST)
-                                    .path(Paths.combine(consumer.service().uri(), "order-summaries"))
+                                    .path(Paths.combine(consumer.service().uri(), "orders"))
                                     .body(articleIdToSerialIds.entrySet()
                                         .stream()
                                         .map(entry -> new DataOrderSummaryBuilder()
