@@ -117,7 +117,7 @@ public class Buyer {
                 .accessPolicy(token())
                 .basePath("/buyer")
 
-                .post("/orders", (request, response) -> request
+                .post("/order-summaries", (request, response) -> request
                     .bodyAs(DataOrderSummaryDto.class)
                     .ifSuccess(order -> {
                         final var isCreated = orderSummaries.put(order.articleId(), order) == null;
