@@ -8,8 +8,8 @@ import se.arkalix.core.plugin.cp.ArTrustedContractObserverPluginFacade;
 import se.arkalix.core.plugin.cp.ContractNegotiationStatus;
 import se.arkalix.core.plugin.cp.HttpJsonTrustedContractObserverPlugin;
 import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.internal.core.plugin.Paths;
 import se.arkalix.net.http.HttpIncomingResponse;
-import se.arkalix.net.http.client.HttpClientResponse;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.net.http.service.HttpService;
@@ -160,7 +160,7 @@ public class Middleware {
                                 .oneUsing(HttpConsumer.factory())
                                 .flatMap(consumer -> consumer.send(new HttpConsumerRequest()
                                     .method(POST)
-                                    .uri("/order-summaries")
+                                    .path(Paths.combine(consumer.service().uri(), "order-summaries"))
                                     .body(articleIdToSerialIds.entrySet()
                                         .stream()
                                         .map(entry -> new DataOrderSummaryBuilder()
