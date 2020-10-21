@@ -142,7 +142,7 @@ public class Middleware {
                 .basePath("/middleware")
                 .accessPolicy(token())
 
-                .get("/orders/:serialId", (request, response) -> {
+                .get("/orders/#serialId", (request, response) -> {
                     final var serialId = Long.parseLong(request.pathParameter(0));
                     final var articleId = serialIdToArticleId.get(serialId);
                     if (articleId != null) {
