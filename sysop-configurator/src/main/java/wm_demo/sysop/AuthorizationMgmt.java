@@ -2,7 +2,7 @@ package wm_demo.sysop;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.net.http.HttpBodyReceiver;
+import se.arkalix.net.MessageIncoming;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.util.concurrent.Future;
@@ -52,7 +52,7 @@ public class AuthorizationMgmt {
                         .map(registry::getSystemIdByNameOrThrow)
                         .collect(Collectors.toList()))
                     .build()))
-            .flatMap(HttpBodyReceiver::bodyAsString)
+            .flatMap(MessageIncoming::bodyAsString)
             .ifSuccess(body -> {
                 logger.info("Created authorization rule {}", rule);
                 logger.debug("Response: {}", body);

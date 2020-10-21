@@ -3,7 +3,7 @@ plugins {
 }
 
 ext {
-    versionArkalix = '0.4.5-SNAPSHOT'
+    versionArkalix = '0.5.1'
 }
 
 dependencies {

@@ -2,7 +2,7 @@ package wm_demo.sysop;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.net.http.HttpBodyReceiver;
+import se.arkalix.net.MessageIncoming;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.util.concurrent.Future;
@@ -34,7 +34,7 @@ public class ServiceRegistryMgmt {
                 .method(POST)
                 .uri("/serviceregistry/mgmt")
                 .body(JSON, service.toRegistrationUsing(providers)))
-            .flatMap(HttpBodyReceiver::bodyAsString)
+            .flatMap(MessageIncoming::bodyAsString)
             .ifSuccess(body -> {
                 logger.info("Created service entry {}/{}",
                     providers.get(service.providerIndex()).systemName(),

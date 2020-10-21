@@ -58,7 +58,7 @@ public class Buyer {
                     new HttpJsonCloudPlugin.Builder()
                         .serviceRegistrationPredicate(service -> service.interfaces()
                             .stream()
-                            .allMatch(i -> i.encoding().isDtoEncoding()))
+                            .allMatch(i -> i.encoding().isDto()))
                         .serviceRegistrySocketAddress(new InetSocketAddress(
                             prop.getProperty("sr_hostname", Config.SR_HOSTNAME),
                             prop.getIntProperty("sr_port", Config.SR_PORT)))

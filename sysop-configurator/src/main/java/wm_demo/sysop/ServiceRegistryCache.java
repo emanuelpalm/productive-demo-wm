@@ -71,7 +71,7 @@ public class ServiceRegistryCache {
 
     public Future<?> refresh() {
         return client.send(serviceRegistryHost, new HttpClientRequest().method(GET).uri("/serviceregistry/mgmt"))
-            .flatMap(response -> response.bodyAsClassIfSuccess(JSON, SrMgmtQueryResultDto.class))
+            .flatMap(response -> response.bodyAsIfSuccess(JSON, SrMgmtQueryResultDto.class))
             .ifSuccess(result -> result.data().forEach(entry -> {
                 final var sd = entry.serviceDefinition();
                 serviceNameToId.put(sd.serviceDefinition(), sd.id());

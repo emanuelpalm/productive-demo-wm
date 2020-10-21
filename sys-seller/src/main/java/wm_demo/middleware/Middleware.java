@@ -8,6 +8,7 @@ import se.arkalix.core.plugin.cp.ArTrustedContractObserverPluginFacade;
 import se.arkalix.core.plugin.cp.ContractNegotiationStatus;
 import se.arkalix.core.plugin.cp.HttpJsonTrustedContractObserverPlugin;
 import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.http.HttpIncomingResponse;
 import se.arkalix.net.http.client.HttpClientResponse;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -63,7 +64,7 @@ public class Middleware {
                     new HttpJsonCloudPlugin.Builder()
                         .serviceRegistrationPredicate(service -> service.interfaces()
                             .stream()
-                            .allMatch(i -> i.encoding().isDtoEncoding()))
+                            .allMatch(i -> i.encoding().isDto()))
                         .serviceRegistrySocketAddress(new InetSocketAddress(
                             prop.getProperty("sr_hostname", Config.SR_HOSTNAME),
                             prop.getIntProperty("sr_port", Config.SR_PORT)))
@@ -156,7 +157,7 @@ public class Middleware {
                             return system.consume()
                                 .name("buyer")
                                 .encodings(JSON)
-                                .using(HttpConsumer.factory())
+                                .oneUsing(HttpConsumer.factory())
                                 .flatMap(consumer -> consumer.send(new HttpConsumerRequest()
                                     .method(POST)
                                     .uri("/order-summaries")
@@ -167,7 +168,7 @@ public class Middleware {
                                             .quantity(entry.getValue().size())
                                             .build())
                                         .collect(Collectors.toUnmodifiableList()))))
-                                .flatMap(HttpClientResponse::rejectIfNotSuccess)
+                                .flatMap(HttpIncomingResponse::rejectIfNotSuccess)
                                 .ifFailure(Throwable.class, throwable ->
                                     logger.warn("Failed to send update order summaries to buyer system", throwable));
                         }
