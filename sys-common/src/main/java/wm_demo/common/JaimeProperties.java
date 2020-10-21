@@ -1,5 +1,8 @@
 package wm_demo.common;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -18,6 +21,8 @@ import java.util.ServiceConfigurationError;
  *
  */
 public class JaimeProperties extends Properties {
+    private static final Logger logger = LoggerFactory.getLogger(JaimeProperties.class);
+
     private static final long serialVersionUID = 1L;
 
     private static final String APP_PROP = "application.properties";
@@ -124,7 +129,8 @@ public class JaimeProperties extends Properties {
         }
 
         if (prop.isEmpty()) {
-            throw new RuntimeException("No properties file found in working directory (" + System.getProperty("user.dir") + ")");
+            logger.warn("No properties files found; continuing anyway ...");
+            return prop;
         }
 
         //If MySQL based JDBC URLs are used, we append the system default time zone to the URL

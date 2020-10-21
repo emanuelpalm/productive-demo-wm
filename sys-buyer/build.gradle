@@ -6,7 +6,7 @@ plugins {
 mainClassName = "${project.group}.buyer.Buyer"
 
 ext {
-    versionArkalix = '0.5.1'
+    versionArkalix = '0.5.2-SNAPSHOT'
     versionSlf4j = '1.7.30'
 }
 
