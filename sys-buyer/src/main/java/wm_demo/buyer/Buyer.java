@@ -118,10 +118,12 @@ public class Buyer {
                 .basePath("/buyer")
 
                 .post("/orders", (request, response) -> request
-                    .bodyAs(DataOrderSummaryDto.class)
-                    .ifSuccess(order -> {
-                        final var isCreated = orderSummaries.put(order.articleId(), order) == null;
-                        response.status(isCreated ? CREATED : OK);
+                    .bodyAsList(DataOrderSummaryDto.class)
+                    .ifSuccess(orderSummaries -> {
+                        for (final var orderSummary : orderSummaries) {
+                            Buyer.orderSummaries.put(orderSummary.articleId(), orderSummary);
+                        }
+                        response.status(OK);
                     })))
 
                 .ifSuccess(handle -> logger.info("Buyer back-end service is now being served"))
